@@ -1,0 +1,85 @@
+Found PDF: Public Holidays PDF Data\Public-Holidays-2024-2027.pdf
+Parsing PDF: Public Holidays PDF Data\Public-Holidays-2024-2027.pdf
+PDF has 1 pages
+Processing page 1...
+Found 1 tables on page 1
+Processing table 1 on page 1...
+Headers: ['Public holiday', '2024', '2025', '2026', '2027']
+
+Found 44 holidays in the PDF.
+
+Holidays by year:
+
+2024 Holidays (4):
+  2024-04-28 - School Holidays - Term 1
+  2024-07-21 - School Holidays - Term 2
+  2024-09-28 - School Holidays - Term 3
+  2024-12-14 - School Holidays - Term 4
+
+2025 Holidays (4):
+  2025-04-27 - School Holidays - Term 1
+  2025-07-20 - School Holidays - Term 2
+  2025-09-27 - School Holidays - Term 3
+  2025-12-13 - School Holidays - Term 4
+
+2026 Holidays (18):
+  2026-01-01 - New Year's Day
+1 January
+  2026-01-26 - Australia Day
+26 January
+  2026-03-09 - Adelaide Cup Day
+  2026-04-03 - Good Friday
+  2026-04-04 - Easter Saturday
+  2026-04-05 - Easter Sunday
+  2026-04-06 - Easter Monday
+  2026-04-25 - Anzac Day
+25 April
+  2026-04-26 - School Holidays - Term 1
+  2026-06-08 - King’s Birthday
+second Monday in June
+  2026-07-19 - School Holidays - Term 2
+  2026-09-26 - School Holidays - Term 3
+  2026-10-05 - Labour Day
+first Monday in October
+  2026-12-12 - School Holidays - Term 4
+  2026-12-24 - Christmas Eve
+24 December
+Public Holiday
+  2026-12-25 - Christmas Day
+25 December
+  2026-12-26 - Proclamation Day holiday
+26 December
+  2026-12-31 - New Year's Eve
+31 December
+Public Holiday
+
+2027 Holidays (18):
+  2027-01-01 - New Year's Day
+1 January
+  2027-01-26 - Australia Day
+26 January
+  2027-03-08 - Adelaide Cup Day
+  2027-03-26 - Good Friday
+  2027-03-27 - Easter Saturday
+  2027-03-28 - Easter Sunday
+  2027-03-29 - Easter Monday
+  2027-04-25 - Anzac Day
+25 April
+  2027-04-25 - School Holidays - Term 1
+  2027-06-14 - King’s Birthday
+second Monday in June
+  2027-07-18 - School Holidays - Term 2
+  2027-09-25 - School Holidays - Term 3
+  2027-10-04 - Labour Day
+first Monday in October
+  2027-12-11 - School Holidays - Term 4
+  2027-12-24 - Christmas Eve
+24 December
+Public Holiday
+  2027-12-25 - Christmas Day
+25 December
+  2027-12-26 - Proclamation Day holiday
+26 December
+  2027-12-31 - New Year's Eve
+31 December
+Public Holiday

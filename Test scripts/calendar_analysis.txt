@@ -1,0 +1,71 @@
+PUBLIC HOLIDAYS BY YEAR:
+2025 - Public Holiday: New Year's Day (20250101)
+2025 - Public Holiday: Australia Day (20250126)
+2025 - Public Holiday: Adelaide Cup Day (20250310)
+2025 - Public Holiday: Good Friday (20250418)
+2025 - Public Holiday: Easter Saturday (20250419)
+2025 - Public Holiday: Easter Sunday (20250420)
+2025 - Public Holiday: Easter Monday (20250421)
+2025 - Public Holiday: Anzac Day (20250425)
+2025 - Public Holiday: King's Birthday (20250609)
+2025 - Public Holiday: Labour Day (20251006)
+2025 - Public Holiday: Christmas Eve (20251224)
+2025 - Public Holiday: Christmas Day (20251225)
+2025 - Public Holiday: Proclamation Day (20251226)
+2025 - Public Holiday: New Year's Eve (20251231)
+2026 - Public Holiday: New Year's Day (20260101)
+2026 - Public Holiday: Australia Day (20260126)
+2026 - Public Holiday: Adelaide Cup Day (20260309)
+2026 - Public Holiday: Good Friday (20260403)
+2026 - Public Holiday: Easter Saturday (20260404)
+2026 - Public Holiday: Easter Sunday (20260405)
+2026 - Public Holiday: Easter Monday (20260406)
+2026 - Public Holiday: Anzac Day (20260425)
+2026 - Public Holiday: King's Birthday (20260608)
+2026 - Public Holiday: Labour Day (20261005)
+2026 - Public Holiday: Christmas Eve (20261224)
+2026 - Public Holiday: Christmas Day (20261225)
+2026 - Public Holiday: Proclamation Day (20261226)
+2026 - Public Holiday: New Year's Eve (20261231)
+2027 - Public Holiday: New Year's Day (20270101)
+2027 - Public Holiday: Australia Day (20270126)
+2027 - Public Holiday: Adelaide Cup Day (20270308)
+2027 - Public Holiday: Good Friday (20270326)
+2027 - Public Holiday: Easter Saturday (20270327)
+2027 - Public Holiday: Easter Sunday (20270328)
+2027 - Public Holiday: Easter Monday (20270329)
+2027 - Public Holiday: Anzac Day (20270425)
+2027 - Public Holiday: King's Birthday (20270614)
+2027 - Public Holiday: Labour Day (20271004)
+2027 - Public Holiday: Christmas Eve (20271224)
+2027 - Public Holiday: Christmas Day (20271225)
+2027 - Public Holiday: Proclamation Day (20271226)
+2027 - Public Holiday: New Year's Eve (20271231)
+
+SUMMARY:
+Total events: 78
+Public Holidays: 42
+School Terms: 12
+School Holidays: 24
+
+EVENTS BY YEAR:
+  2025:
+    Public Holidays: 14
+    School Terms: 4
+    School Holidays: 7
+    Total: 25
+  2026:
+    Public Holidays: 14
+    School Terms: 4
+    School Holidays: 8
+    Total: 26
+  2027:
+    Public Holidays: 14
+    School Terms: 4
+    School Holidays: 8
+    Total: 26
+  other:
+    Public Holidays: 0
+    School Terms: 0
+    School Holidays: 1
+    Total: 1

@@ -1,0 +1,20 @@
+SOUTH AUSTRALIA PUBLIC HOLIDAY CALENDAR VALIDATION
+==================================================
+Date: 2025-04-06 19:11:47
+Calendar file: Public-Holiday-Calendar-SA.ics
+--------------------------------------------------
+
+Calendar Version: 2.0
+Calendar Name: South Australia Public Holidays and School Terms
+Calendar Description: Public Holidays and School Terms for South Australia
+Calendar Timezone: Australia/Adelaide
+Total Events: 90
+Public Holidays: 42
+School Terms: 24
+School Holidays: 24
+Other Events: 0
+Events in 2025: Total: 29 (Public: 14, School Terms: 8, School Holidays: 7)
+Events in 2026: Total: 30 (Public: 14, School Terms: 8, School Holidays: 8)
+Events in 2027: Total: 30 (Public: 14, School Terms: 8, School Holidays: 8)
+Google Calendar Compatibility: No issues detected
+Validation Status: Calendar is valid and compatible with Google Calendar

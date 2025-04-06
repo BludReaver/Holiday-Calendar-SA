@@ -1,0 +1,826 @@
+Starting calendar update process...
+Fetching data from https://www.safework.sa.gov.au/resources/public-holidays...
+Found PDF URL: https://www.safework.sa.gov.au/__data/assets/pdf_file/0007/145645/Public-Holidays-2024-2027.pdf
+Downloaded PDF to: Public Holidays PDF Data/Public-Holidays-2024-2027.pdf
+Parsing PDF: Public Holidays PDF Data/Public-Holidays-2024-2027.pdf
+PDF has 1 pages
+Processing page 1...
+Found 1 tables on page 1
+Processing table 1 on page 1...
+Headers: ['Public holiday', '2024', '2025', '2026', '2027']
+Processing row 1: ['', '', '', '', '']
+Row 1 is empty or missing holiday name
+Processing row 2: ["New Year's Day\n1 January", 'Monday', 'Wednesday', 'Thursday\n1 January', 'Friday\n1 January']
+Original holiday name: New Year's Day
+1 January
+Cleaned holiday name: New Year's Day
+1 January
+Processing date cell for 2024: 'Monday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Monday', skipping
+Processing date cell for 2025: 'Wednesday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Extracted date from name: 2025-01-01 00:00:00
+Using known 2025 date for New Year's Day
+1 January: 2025-01-01 00:00:00
+Added holiday: 2025-01-01 - New Year's Day
+1 January
+Processing date cell for 2026: 'Thursday
+1 January'
+Matched format 'Weekday Day Month': Thursday 1 January 2026
+Successfully parsed date: 2026-01-01 00:00:00
+Added holiday: 2026-01-01 - New Year's Day
+1 January
+Processing date cell for 2027: 'Friday
+1 January'
+Matched format 'Weekday Day Month': Friday 1 January 2027
+Successfully parsed date: 2027-01-01 00:00:00
+Added holiday: 2027-01-01 - New Year's Day
+1 January
+Processing row 3: [None, '1 January', '1 January', None, None]
+Row 3 is empty or missing holiday name
+Processing row 4: [None, '', '', None, None]
+Row 4 is empty or missing holiday name
+Processing row 5: ['Australia Day\n26 January', 'Friday', 'Monday', 'Monday\n26 January', 'Tuesday\n26 January']
+Original holiday name: Australia Day
+26 January
+Cleaned holiday name: Australia Day
+26 January
+Processing date cell for 2024: 'Friday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Friday', skipping
+Processing date cell for 2025: 'Monday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Extracted date from name: 2025-01-26 00:00:00
+Using known 2025 date for Australia Day
+26 January: 2025-01-27 00:00:00
+Added holiday: 2025-01-27 - Australia Day
+26 January
+Processing date cell for 2026: 'Monday
+26 January'
+Matched format 'Weekday Day Month': Monday 26 January 2026
+Successfully parsed date: 2026-01-26 00:00:00
+Added holiday: 2026-01-26 - Australia Day
+26 January
+Processing date cell for 2027: 'Tuesday
+26 January'
+Matched format 'Weekday Day Month': Tuesday 26 January 2027
+Successfully parsed date: 2027-01-26 00:00:00
+Added holiday: 2027-01-26 - Australia Day
+26 January
+Processing row 6: [None, '26 January', '27 January', None, None]
+Row 6 is empty or missing holiday name
+Processing row 7: [None, '', '', None, None]
+Row 7 is empty or missing holiday name
+Processing row 8: ['Adelaide Cup Day\n(second Monday in March)', 'Monday', 'Monday', 'Monday\n9 March', 'Monday\n8 March']
+Original holiday name: Adelaide Cup Day
+(second Monday in March)
+Cleaned holiday name: Adelaide Cup Day
+Processing date cell for 2024: 'Monday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Monday', skipping
+Processing date cell for 2025: 'Monday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Using known 2025 date for Adelaide Cup Day: 2025-03-10 00:00:00
+Added holiday: 2025-03-10 - Adelaide Cup Day
+Processing date cell for 2026: 'Monday
+9 March'
+Matched format 'Weekday Day Month': Monday 9 March 2026
+Successfully parsed date: 2026-03-09 00:00:00
+Added holiday: 2026-03-09 - Adelaide Cup Day
+Processing date cell for 2027: 'Monday
+8 March'
+Matched format 'Weekday Day Month': Monday 8 March 2027
+Successfully parsed date: 2027-03-08 00:00:00
+Added holiday: 2027-03-08 - Adelaide Cup Day
+Processing row 9: [None, '11 March', '10 March', None, None]
+Row 9 is empty or missing holiday name
+Processing row 10: [None, '', '', None, None]
+Row 10 is empty or missing holiday name
+Processing row 11: ['Good Friday\n(varies with lunar cycle)', 'Friday', 'Friday', 'Friday\n3 April', 'Friday\n26 March']
+Original holiday name: Good Friday
+(varies with lunar cycle)
+Cleaned holiday name: Good Friday
+Processing date cell for 2024: 'Friday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Friday', skipping
+Processing date cell for 2025: 'Friday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Using known 2025 date for Good Friday: 2025-04-18 00:00:00
+Added holiday: 2025-04-18 - Good Friday
+Processing date cell for 2026: 'Friday
+3 April'
+Matched format 'Weekday Day Month': Friday 3 April 2026
+Successfully parsed date: 2026-04-03 00:00:00
+Added holiday: 2026-04-03 - Good Friday
+Processing date cell for 2027: 'Friday
+26 March'
+Matched format 'Weekday Day Month': Friday 26 March 2027
+Successfully parsed date: 2027-03-26 00:00:00
+Added holiday: 2027-03-26 - Good Friday
+Processing row 12: [None, '29 March', '18 April', None, None]
+Row 12 is empty or missing holiday name
+Processing row 13: [None, '', '', None, None]
+Row 13 is empty or missing holiday name
+Processing row 14: ['Easter Saturday\n(varies with lunar cycle)', 'Saturday', 'Saturday', 'Saturday\n4 April', 'Saturday\n27 March']
+Original holiday name: Easter Saturday
+(varies with lunar cycle)
+Cleaned holiday name: Easter Saturday
+Processing date cell for 2024: 'Saturday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Saturday', skipping
+Processing date cell for 2025: 'Saturday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Using known 2025 date for Easter Saturday: 2025-04-19 00:00:00
+Added holiday: 2025-04-19 - Easter Saturday
+Processing date cell for 2026: 'Saturday
+4 April'
+Matched format 'Weekday Day Month': Saturday 4 April 2026
+Successfully parsed date: 2026-04-04 00:00:00
+Added holiday: 2026-04-04 - Easter Saturday
+Processing date cell for 2027: 'Saturday
+27 March'
+Matched format 'Weekday Day Month': Saturday 27 March 2027
+Successfully parsed date: 2027-03-27 00:00:00
+Added holiday: 2027-03-27 - Easter Saturday
+Processing row 15: [None, '30 March', '19 April', None, None]
+Row 15 is empty or missing holiday name
+Processing row 16: [None, '', '', None, None]
+Row 16 is empty or missing holiday name
+Processing row 17: ['Easter Sunday (from 2024)\n(varies with lunar cycle)', 'Sunday', 'Sunday', 'Sunday\n5 April', 'Sunday\n28 March']
+Original holiday name: Easter Sunday (from 2024)
+(varies with lunar cycle)
+Cleaned holiday name: Easter Sunday
+Processing date cell for 2024: 'Sunday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Sunday', skipping
+Processing date cell for 2025: 'Sunday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Using known 2025 date for Easter Sunday: 2025-04-20 00:00:00
+Added holiday: 2025-04-20 - Easter Sunday
+Processing date cell for 2026: 'Sunday
+5 April'
+Matched format 'Weekday Day Month': Sunday 5 April 2026
+Successfully parsed date: 2026-04-05 00:00:00
+Added holiday: 2026-04-05 - Easter Sunday
+Processing date cell for 2027: 'Sunday
+28 March'
+Matched format 'Weekday Day Month': Sunday 28 March 2027
+Successfully parsed date: 2027-03-28 00:00:00
+Added holiday: 2027-03-28 - Easter Sunday
+Processing row 18: [None, '31 March', '20 April', None, None]
+Row 18 is empty or missing holiday name
+Processing row 19: [None, '', '', None, None]
+Row 19 is empty or missing holiday name
+Processing row 20: ['Easter Monday\n(varies with lunar cycle)', 'Monday', 'Monday', 'Monday\n6 April', 'Monday\n29 March']
+Original holiday name: Easter Monday
+(varies with lunar cycle)
+Cleaned holiday name: Easter Monday
+Processing date cell for 2024: 'Monday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Monday', skipping
+Processing date cell for 2025: 'Monday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Using known 2025 date for Easter Monday: 2025-04-21 00:00:00
+Added holiday: 2025-04-21 - Easter Monday
+Processing date cell for 2026: 'Monday
+6 April'
+Matched format 'Weekday Day Month': Monday 6 April 2026
+Successfully parsed date: 2026-04-06 00:00:00
+Added holiday: 2026-04-06 - Easter Monday
+Processing date cell for 2027: 'Monday
+29 March'
+Matched format 'Weekday Day Month': Monday 29 March 2027
+Successfully parsed date: 2027-03-29 00:00:00
+Added holiday: 2027-03-29 - Easter Monday
+Processing row 21: [None, '1 April', '21 April', None, None]
+Row 21 is empty or missing holiday name
+Processing row 22: [None, '', '', None, None]
+Row 22 is empty or missing holiday name
+Processing row 23: ['School Holidays - Term 1', '13-28 April', '12-27 April', '11-26 April', '10-25 April']
+Original holiday name: School Holidays - Term 1
+Cleaned holiday name: School Holidays - Term 1
+Processing date cell for 2024: '13-28 April'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 28 April 2024
+Successfully parsed date: 2024-04-28 00:00:00
+Added holiday: 2024-04-28 - School Holidays - Term 1
+Processing date cell for 2025: '12-27 April'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 27 April 2025
+Successfully parsed date: 2025-04-27 00:00:00
+Added holiday: 2025-04-27 - School Holidays - Term 1
+Processing date cell for 2026: '11-26 April'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 26 April 2026
+Successfully parsed date: 2026-04-26 00:00:00
+Added holiday: 2026-04-26 - School Holidays - Term 1
+Processing date cell for 2027: '10-25 April'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 25 April 2027
+Successfully parsed date: 2027-04-25 00:00:00
+Added holiday: 2027-04-25 - School Holidays - Term 1
+Processing row 24: ['Anzac Day\n25 April', 'Thursday', 'Friday', 'Saturday\n25 April', 'Sunday\n25 April']
+Original holiday name: Anzac Day
+25 April
+Cleaned holiday name: Anzac Day
+25 April
+Processing date cell for 2024: 'Thursday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Thursday', skipping
+Processing date cell for 2025: 'Friday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Extracted date from name: 2025-04-25 00:00:00
+Using known 2025 date for Anzac Day
+25 April: 2025-04-25 00:00:00
+Added holiday: 2025-04-25 - Anzac Day
+25 April
+Processing date cell for 2026: 'Saturday
+25 April'
+Matched format 'Weekday Day Month': Saturday 25 April 2026
+Successfully parsed date: 2026-04-25 00:00:00
+Added holiday: 2026-04-25 - Anzac Day
+25 April
+Processing date cell for 2027: 'Sunday
+25 April'
+Matched format 'Weekday Day Month': Sunday 25 April 2027
+Successfully parsed date: 2027-04-25 00:00:00
+Added holiday: 2027-04-25 - Anzac Day
+25 April
+Processing row 25: [None, '25 April', '25 April', None, None]
+Row 25 is empty or missing holiday name
+Processing row 26: [None, '', '', None, None]
+Row 26 is empty or missing holiday name
+Processing row 27: ['King’s Birthday\nsecond Monday in June', 'Monday', 'Monday', 'Monday\n8 June', 'Monday\n14 June']
+Original holiday name: King’s Birthday
+second Monday in June
+Cleaned holiday name: King’s Birthday
+second Monday in June
+Processing date cell for 2024: 'Monday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Monday', skipping
+Processing date cell for 2025: 'Monday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Monday', skipping
+Processing date cell for 2026: 'Monday
+8 June'
+Matched format 'Weekday Day Month': Monday 8 June 2026
+Successfully parsed date: 2026-06-08 00:00:00
+Added holiday: 2026-06-08 - King’s Birthday
+second Monday in June
+Processing date cell for 2027: 'Monday
+14 June'
+Matched format 'Weekday Day Month': Monday 14 June 2027
+Successfully parsed date: 2027-06-14 00:00:00
+Added holiday: 2027-06-14 - King’s Birthday
+second Monday in June
+Processing row 28: [None, '10 June', '9 June', None, None]
+Row 28 is empty or missing holiday name
+Processing row 29: [None, '', '', None, None]
+Row 29 is empty or missing holiday name
+Processing row 30: ['School Holidays - Term 2', '6-21 July', '5-20 July', '4-19 July', '3-18 July']
+Original holiday name: School Holidays - Term 2
+Cleaned holiday name: School Holidays - Term 2
+Processing date cell for 2024: '6-21 July'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 21 July 2024
+Successfully parsed date: 2024-07-21 00:00:00
+Added holiday: 2024-07-21 - School Holidays - Term 2
+Processing date cell for 2025: '5-20 July'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 20 July 2025
+Successfully parsed date: 2025-07-20 00:00:00
+Added holiday: 2025-07-20 - School Holidays - Term 2
+Processing date cell for 2026: '4-19 July'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 19 July 2026
+Successfully parsed date: 2026-07-19 00:00:00
+Added holiday: 2026-07-19 - School Holidays - Term 2
+Processing date cell for 2027: '3-18 July'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 18 July 2027
+Successfully parsed date: 2027-07-18 00:00:00
+Added holiday: 2027-07-18 - School Holidays - Term 2
+Processing row 31: ['School Holidays - Term 3', '28 September –', '27 September –', '26 September –', '25 September –']
+Original holiday name: School Holidays - Term 3
+Cleaned holiday name: School Holidays - Term 3
+Processing date cell for 2024: '28 September –'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 28 September 2024
+Successfully parsed date: 2024-09-28 00:00:00
+Added holiday: 2024-09-28 - School Holidays - Term 3
+Processing date cell for 2025: '27 September –'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 27 September 2025
+Successfully parsed date: 2025-09-27 00:00:00
+Added holiday: 2025-09-27 - School Holidays - Term 3
+Processing date cell for 2026: '26 September –'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 26 September 2026
+Successfully parsed date: 2026-09-26 00:00:00
+Added holiday: 2026-09-26 - School Holidays - Term 3
+Processing date cell for 2027: '25 September –'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 25 September 2027
+Successfully parsed date: 2027-09-25 00:00:00
+Added holiday: 2027-09-25 - School Holidays - Term 3
+Processing row 32: [None, '13 October', '12 October', '11 October', '10 October']
+Row 32 is empty or missing holiday name
+Processing row 33: ['', None, None, None, None]
+Row 33 is empty or missing holiday name
+Processing row 34: ['Labour Day\nfirst Monday in October', 'Monday', 'Monday', 'Monday\n5 October', 'Monday\n4 October']
+Original holiday name: Labour Day
+first Monday in October
+Cleaned holiday name: Labour Day
+first Monday in October
+Processing date cell for 2024: 'Monday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Monday', skipping
+Processing date cell for 2025: 'Monday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Using known 2025 date for Labour Day
+first Monday in October: 2025-10-06 00:00:00
+Added holiday: 2025-10-06 - Labour Day
+first Monday in October
+Processing date cell for 2026: 'Monday
+5 October'
+Matched format 'Weekday Day Month': Monday 5 October 2026
+Successfully parsed date: 2026-10-05 00:00:00
+Added holiday: 2026-10-05 - Labour Day
+first Monday in October
+Processing date cell for 2027: 'Monday
+4 October'
+Matched format 'Weekday Day Month': Monday 4 October 2027
+Successfully parsed date: 2027-10-04 00:00:00
+Added holiday: 2027-10-04 - Labour Day
+first Monday in October
+Processing row 35: [None, '7 October', '6 October', None, None]
+Row 35 is empty or missing holiday name
+Processing row 36: [None, '', '', None, None]
+Row 36 is empty or missing holiday name
+Processing row 37: ['School Holidays - Term 4', '14 December –', '13 December –', '12 December –', '11 December –']
+Original holiday name: School Holidays - Term 4
+Cleaned holiday name: School Holidays - Term 4
+Processing date cell for 2024: '14 December –'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 14 December 2024
+Successfully parsed date: 2024-12-14 00:00:00
+Added holiday: 2024-12-14 - School Holidays - Term 4
+Processing date cell for 2025: '13 December –'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 13 December 2025
+Successfully parsed date: 2025-12-13 00:00:00
+Added holiday: 2025-12-13 - School Holidays - Term 4
+Processing date cell for 2026: '12 December –'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 12 December 2026
+Successfully parsed date: 2026-12-12 00:00:00
+Added holiday: 2026-12-12 - School Holidays - Term 4
+Processing date cell for 2027: '11 December –'
+No match for format 'Weekday Day Month'
+Matched format 'Day Month': 11 December 2027
+Successfully parsed date: 2027-12-11 00:00:00
+Added holiday: 2027-12-11 - School Holidays - Term 4
+Processing row 38: [None, '27 January', '26 January', '26 January', '30 January']
+Row 38 is empty or missing holiday name
+Processing row 39: ['', None, None, None, None]
+Row 39 is empty or missing holiday name
+Processing row 40: ['Christmas Eve\n24 December\nPart-day public holiday', 'Tuesday', 'Wednesday', 'Thursday\n24 December\n7pm-midnight', 'Friday\n24 December\n7pm-midnight']
+Original holiday name: Christmas Eve
+24 December
+Part-day public holiday
+Cleaned holiday name: Christmas Eve
+24 December
+Part-day public holiday
+Adjusted part-day holiday to full day: Christmas Eve
+24 December
+Public Holiday
+Processing date cell for 2024: 'Tuesday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Tuesday', skipping
+Processing date cell for 2025: 'Wednesday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Extracted date from name: 2025-12-24 00:00:00
+Using known 2025 date for Christmas Eve
+24 December
+Public Holiday: 2025-12-24 00:00:00
+Added holiday: 2025-12-24 - Christmas Eve
+24 December
+Public Holiday
+Processing date cell for 2026: 'Thursday
+24 December
+7pm-midnight'
+Matched format 'Weekday Day Month': Thursday 24 December 2026
+Successfully parsed date: 2026-12-24 00:00:00
+Added holiday: 2026-12-24 - Christmas Eve
+24 December
+Public Holiday
+Processing date cell for 2027: 'Friday
+24 December
+7pm-midnight'
+Matched format 'Weekday Day Month': Friday 24 December 2027
+Successfully parsed date: 2027-12-24 00:00:00
+Added holiday: 2027-12-24 - Christmas Eve
+24 December
+Public Holiday
+Processing row 41: [None, '24 December', '24 December', None, None]
+Row 41 is empty or missing holiday name
+Processing row 42: [None, '7pm-midnight', '7pm-midnight', None, None]
+Row 42 is empty or missing holiday name
+Processing row 43: [None, '', '', None, None]
+Row 43 is empty or missing holiday name
+Processing row 44: ['Christmas Day\n25 December', 'Wednesday', 'Thursday', 'Friday\n25 December', 'Saturday\n25 December\nMonday\n27 December\n(additional day)']
+Original holiday name: Christmas Day
+25 December
+Cleaned holiday name: Christmas Day
+25 December
+Processing date cell for 2024: 'Wednesday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Wednesday', skipping
+Processing date cell for 2025: 'Thursday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Extracted date from name: 2025-12-25 00:00:00
+Using known 2025 date for Christmas Day
+25 December: 2025-12-25 00:00:00
+Added holiday: 2025-12-25 - Christmas Day
+25 December
+Processing date cell for 2026: 'Friday
+25 December'
+Matched format 'Weekday Day Month': Friday 25 December 2026
+Successfully parsed date: 2026-12-25 00:00:00
+Added holiday: 2026-12-25 - Christmas Day
+25 December
+Processing date cell for 2027: 'Saturday
+25 December
+Monday
+27 December
+(additional day)'
+Matched format 'Weekday Day Month': Saturday 25 December 2027
+Successfully parsed date: 2027-12-25 00:00:00
+Added holiday: 2027-12-25 - Christmas Day
+25 December
+Processing row 45: [None, '25 December', '25 December', None, None]
+Row 45 is empty or missing holiday name
+Processing row 46: [None, '', '', None, None]
+Row 46 is empty or missing holiday name
+Processing row 47: ['Proclamation Day holiday\n26 December', 'Thursday', 'Friday', 'Saturday\n26 December\nMonday\n28 December\n(additional day)', 'Sunday\n26 December\nTuesday\n28 December\n(additional day)']
+Original holiday name: Proclamation Day holiday
+26 December
+Cleaned holiday name: Proclamation Day holiday
+26 December
+Processing date cell for 2024: 'Thursday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Thursday', skipping
+Processing date cell for 2025: 'Friday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Extracted date from name: 2025-12-26 00:00:00
+Using known 2025 date for Proclamation Day holiday
+26 December: 2025-12-26 00:00:00
+Added holiday: 2025-12-26 - Proclamation Day holiday
+26 December
+Processing date cell for 2026: 'Saturday
+26 December
+Monday
+28 December
+(additional day)'
+Matched format 'Weekday Day Month': Saturday 26 December 2026
+Successfully parsed date: 2026-12-26 00:00:00
+Added holiday: 2026-12-26 - Proclamation Day holiday
+26 December
+Processing date cell for 2027: 'Sunday
+26 December
+Tuesday
+28 December
+(additional day)'
+Matched format 'Weekday Day Month': Sunday 26 December 2027
+Successfully parsed date: 2027-12-26 00:00:00
+Added holiday: 2027-12-26 - Proclamation Day holiday
+26 December
+Processing row 48: [None, '26 December', '26 December', None, None]
+Row 48 is empty or missing holiday name
+Processing row 49: [None, '', '', None, None]
+Row 49 is empty or missing holiday name
+Processing row 50: ["New Year's Eve\n31 December\nPart-day public holiday", 'Tuesday', 'Wednesday', 'Thursday\n31 December\n7pm-midnight', 'Friday\n31 December\n7pm-midnight']
+Original holiday name: New Year's Eve
+31 December
+Part-day public holiday
+Cleaned holiday name: New Year's Eve
+31 December
+Part-day public holiday
+Adjusted part-day holiday to full day: New Year's Eve
+31 December
+Public Holiday
+Processing date cell for 2024: 'Tuesday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Failed to parse date from: 'Tuesday', skipping
+Processing date cell for 2025: 'Wednesday'
+No match for format 'Weekday Day Month'
+No match for format 'Day Month'
+Extracted date from name: 2025-12-31 00:00:00
+Using known 2025 date for New Year's Eve
+31 December
+Public Holiday: 2025-12-31 00:00:00
+Added holiday: 2025-12-31 - New Year's Eve
+31 December
+Public Holiday
+Processing date cell for 2026: 'Thursday
+31 December
+7pm-midnight'
+Matched format 'Weekday Day Month': Thursday 31 December 2026
+Successfully parsed date: 2026-12-31 00:00:00
+Added holiday: 2026-12-31 - New Year's Eve
+31 December
+Public Holiday
+Processing date cell for 2027: 'Friday
+31 December
+7pm-midnight'
+Matched format 'Weekday Day Month': Friday 31 December 2027
+Successfully parsed date: 2027-12-31 00:00:00
+Added holiday: 2027-12-31 - New Year's Eve
+31 December
+Public Holiday
+Processing row 51: [None, '31 December', '31 December', None, None]
+Row 51 is empty or missing holiday name
+Processing row 52: [None, '7pm-midnight', '7pm-midnight', None, None]
+Row 52 is empty or missing holiday name
+Processing row 53: [None, '', '', None, None]
+Row 53 is empty or missing holiday name
+Found 57 holidays to add to calendar
+Creating event 1: 2025-01-01 - New Year's Day
+1 January
+Added event 1: 2025-01-01 - New Year's Day
+1 January - All day - Category: Public Holiday
+Creating event 2: 2026-01-01 - New Year's Day
+1 January
+Added event 2: 2026-01-01 - New Year's Day
+1 January - All day - Category: Public Holiday
+Creating event 3: 2027-01-01 - New Year's Day
+1 January
+Added event 3: 2027-01-01 - New Year's Day
+1 January - All day - Category: Public Holiday
+Creating event 4: 2025-01-27 - Australia Day
+26 January
+Added event 4: 2025-01-27 - Australia Day
+26 January - All day - Category: Public Holiday
+Creating event 5: 2026-01-26 - Australia Day
+26 January
+Added event 5: 2026-01-26 - Australia Day
+26 January - All day - Category: Public Holiday
+Creating event 6: 2027-01-26 - Australia Day
+26 January
+Added event 6: 2027-01-26 - Australia Day
+26 January - All day - Category: Public Holiday
+Creating event 7: 2025-03-10 - Adelaide Cup Day
+Added event 7: 2025-03-10 - Adelaide Cup Day - All day - Category: Public Holiday
+Creating event 8: 2026-03-09 - Adelaide Cup Day
+Added event 8: 2026-03-09 - Adelaide Cup Day - All day - Category: Public Holiday
+Creating event 9: 2027-03-08 - Adelaide Cup Day
+Added event 9: 2027-03-08 - Adelaide Cup Day - All day - Category: Public Holiday
+Creating event 10: 2025-04-18 - Good Friday
+Added event 10: 2025-04-18 - Good Friday - All day - Category: Public Holiday
+Creating event 11: 2026-04-03 - Good Friday
+Added event 11: 2026-04-03 - Good Friday - All day - Category: Public Holiday
+Creating event 12: 2027-03-26 - Good Friday
+Added event 12: 2027-03-26 - Good Friday - All day - Category: Public Holiday
+Creating event 13: 2025-04-19 - Easter Saturday
+Added event 13: 2025-04-19 - Easter Saturday - All day - Category: Public Holiday
+Creating event 14: 2026-04-04 - Easter Saturday
+Added event 14: 2026-04-04 - Easter Saturday - All day - Category: Public Holiday
+Creating event 15: 2027-03-27 - Easter Saturday
+Added event 15: 2027-03-27 - Easter Saturday - All day - Category: Public Holiday
+Creating event 16: 2025-04-20 - Easter Sunday
+Added event 16: 2025-04-20 - Easter Sunday - All day - Category: Public Holiday
+Creating event 17: 2026-04-05 - Easter Sunday
+Added event 17: 2026-04-05 - Easter Sunday - All day - Category: Public Holiday
+Creating event 18: 2027-03-28 - Easter Sunday
+Added event 18: 2027-03-28 - Easter Sunday - All day - Category: Public Holiday
+Creating event 19: 2025-04-21 - Easter Monday
+Added event 19: 2025-04-21 - Easter Monday - All day - Category: Public Holiday
+Creating event 20: 2026-04-06 - Easter Monday
+Added event 20: 2026-04-06 - Easter Monday - All day - Category: Public Holiday
+Creating event 21: 2027-03-29 - Easter Monday
+Added event 21: 2027-03-29 - Easter Monday - All day - Category: Public Holiday
+Creating event 22: 2024-04-28 - School Holidays - Term 1
+Added event 22: 2024-04-28 - School Holidays - Term 1 - All day - Category: Public Holiday
+Creating event 23: 2025-04-27 - School Holidays - Term 1
+Added event 23: 2025-04-27 - School Holidays - Term 1 - All day - Category: Public Holiday
+Creating event 24: 2026-04-26 - School Holidays - Term 1
+Added event 24: 2026-04-26 - School Holidays - Term 1 - All day - Category: Public Holiday
+Creating event 25: 2027-04-25 - School Holidays - Term 1
+Added event 25: 2027-04-25 - School Holidays - Term 1 - All day - Category: Public Holiday
+Creating event 26: 2025-04-25 - Anzac Day
+25 April
+Added event 26: 2025-04-25 - Anzac Day
+25 April - All day - Category: Public Holiday
+Creating event 27: 2026-04-25 - Anzac Day
+25 April
+Added event 27: 2026-04-25 - Anzac Day
+25 April - All day - Category: Public Holiday
+Creating event 28: 2027-04-25 - Anzac Day
+25 April
+Added event 28: 2027-04-25 - Anzac Day
+25 April - All day - Category: Public Holiday
+Creating event 29: 2026-06-08 - King’s Birthday
+second Monday in June
+Added event 29: 2026-06-08 - King's Birthday - All day - Category: Public Holiday
+Creating event 30: 2027-06-14 - King’s Birthday
+second Monday in June
+Added event 30: 2027-06-14 - King's Birthday - All day - Category: Public Holiday
+Creating event 31: 2024-07-21 - School Holidays - Term 2
+Added event 31: 2024-07-21 - School Holidays - Term 2 - All day - Category: Public Holiday
+Creating event 32: 2025-07-20 - School Holidays - Term 2
+Added event 32: 2025-07-20 - School Holidays - Term 2 - All day - Category: Public Holiday
+Creating event 33: 2026-07-19 - School Holidays - Term 2
+Added event 33: 2026-07-19 - School Holidays - Term 2 - All day - Category: Public Holiday
+Creating event 34: 2027-07-18 - School Holidays - Term 2
+Added event 34: 2027-07-18 - School Holidays - Term 2 - All day - Category: Public Holiday
+Creating event 35: 2024-09-28 - School Holidays - Term 3
+Added event 35: 2024-09-28 - School Holidays - Term 3 - All day - Category: Public Holiday
+Creating event 36: 2025-09-27 - School Holidays - Term 3
+Added event 36: 2025-09-27 - School Holidays - Term 3 - All day - Category: Public Holiday
+Creating event 37: 2026-09-26 - School Holidays - Term 3
+Added event 37: 2026-09-26 - School Holidays - Term 3 - All day - Category: Public Holiday
+Creating event 38: 2027-09-25 - School Holidays - Term 3
+Added event 38: 2027-09-25 - School Holidays - Term 3 - All day - Category: Public Holiday
+Creating event 39: 2025-10-06 - Labour Day
+first Monday in October
+Added event 39: 2025-10-06 - Labour Day
+first Monday in October - All day - Category: Public Holiday
+Creating event 40: 2026-10-05 - Labour Day
+first Monday in October
+Added event 40: 2026-10-05 - Labour Day
+first Monday in October - All day - Category: Public Holiday
+Creating event 41: 2027-10-04 - Labour Day
+first Monday in October
+Added event 41: 2027-10-04 - Labour Day
+first Monday in October - All day - Category: Public Holiday
+Creating event 42: 2024-12-14 - School Holidays - Term 4
+Added event 42: 2024-12-14 - School Holidays - Term 4 - All day - Category: Public Holiday
+Creating event 43: 2025-12-13 - School Holidays - Term 4
+Added event 43: 2025-12-13 - School Holidays - Term 4 - All day - Category: Public Holiday
+Creating event 44: 2026-12-12 - School Holidays - Term 4
+Added event 44: 2026-12-12 - School Holidays - Term 4 - All day - Category: Public Holiday
+Creating event 45: 2027-12-11 - School Holidays - Term 4
+Added event 45: 2027-12-11 - School Holidays - Term 4 - All day - Category: Public Holiday
+Creating event 46: 2025-12-24 - Christmas Eve
+24 December
+Public Holiday
+Added event 46: 2025-12-24 - Christmas Eve
+24 December
+Public Holiday - All day - Category: Public Holiday
+Creating event 47: 2026-12-24 - Christmas Eve
+24 December
+Public Holiday
+Added event 47: 2026-12-24 - Christmas Eve
+24 December
+Public Holiday - All day - Category: Public Holiday
+Creating event 48: 2027-12-24 - Christmas Eve
+24 December
+Public Holiday
+Added event 48: 2027-12-24 - Christmas Eve
+24 December
+Public Holiday - All day - Category: Public Holiday
+Creating event 49: 2025-12-25 - Christmas Day
+25 December
+Added event 49: 2025-12-25 - Christmas Day
+25 December - All day - Category: Public Holiday
+Creating event 50: 2026-12-25 - Christmas Day
+25 December
+Added event 50: 2026-12-25 - Christmas Day
+25 December - All day - Category: Public Holiday
+Creating event 51: 2027-12-25 - Christmas Day
+25 December
+Added event 51: 2027-12-25 - Christmas Day
+25 December - All day - Category: Public Holiday
+Creating event 52: 2025-12-26 - Proclamation Day holiday
+26 December
+Added event 52: 2025-12-26 - Proclamation Day holiday
+26 December - All day - Category: Public Holiday
+Creating event 53: 2026-12-26 - Proclamation Day holiday
+26 December
+Added event 53: 2026-12-26 - Proclamation Day holiday
+26 December - All day - Category: Public Holiday
+Creating event 54: 2027-12-26 - Proclamation Day holiday
+26 December
+Added event 54: 2027-12-26 - Proclamation Day holiday
+26 December - All day - Category: Public Holiday
+Creating event 55: 2025-12-31 - New Year's Eve
+31 December
+Public Holiday
+Added event 55: 2025-12-31 - New Year's Eve
+31 December
+Public Holiday - All day - Category: Public Holiday
+Creating event 56: 2026-12-31 - New Year's Eve
+31 December
+Public Holiday
+Added event 56: 2026-12-31 - New Year's Eve
+31 December
+Public Holiday - All day - Category: Public Holiday
+Creating event 57: 2027-12-31 - New Year's Eve
+31 December
+Public Holiday
+Added event 57: 2027-12-31 - New Year's Eve
+31 December
+Public Holiday - All day - Category: Public Holiday
+Found 16 school holiday events in PDF
+Added Term 1 Begin event for 2024: 2024-04-29 00:00:00
+Added Term 1 End event for 2024: 2024-07-07 00:00:00
+Added Term 1 Begin event for 2025: 2025-04-28 00:00:00
+Added Term 1 End event for 2025: 2025-07-06 00:00:00
+Added Term 1 Begin event for 2026: 2026-04-27 00:00:00
+Added Term 1 End event for 2026: 2026-07-05 00:00:00
+Added Term 1 Begin event for 2027: 2027-04-26 00:00:00
+Added Term 1 End event for 2027: 2027-07-04 00:00:00
+Added Term 2 Begin event for 2024: 2024-07-22 00:00:00
+Added Term 2 End event for 2024: 2024-09-14 00:00:00
+Added Term 2 Begin event for 2025: 2025-07-21 00:00:00
+Added Term 2 End event for 2025: 2025-09-13 00:00:00
+Added Term 2 Begin event for 2026: 2026-07-20 00:00:00
+Added Term 2 End event for 2026: 2026-09-12 00:00:00
+Added Term 2 Begin event for 2027: 2027-07-19 00:00:00
+Added Term 2 End event for 2027: 2027-09-11 00:00:00
+Added Term 3 Begin event for 2024: 2024-09-29 00:00:00
+Added Term 3 End event for 2024: 2024-11-30 00:00:00
+Added Term 3 Begin event for 2025: 2025-09-28 00:00:00
+Added Term 3 End event for 2025: 2025-11-29 00:00:00
+Added Term 3 Begin event for 2026: 2026-09-27 00:00:00
+Added Term 3 End event for 2026: 2026-11-28 00:00:00
+Added Term 3 Begin event for 2027: 2027-09-26 00:00:00
+Added Term 3 End event for 2027: 2027-11-27 00:00:00
+Added Term 4 Begin event for 2024: 2024-12-15 00:00:00
+Added Term 4 End event for 2024: 2025-04-13 00:00:00
+Added Term 4 Begin event for 2025: 2025-12-14 00:00:00
+Added Term 4 End event for 2025: 2026-04-12 00:00:00
+Added Term 4 Begin event for 2026: 2026-12-13 00:00:00
+Added Term 4 End event for 2026: 2027-04-11 00:00:00
+Added Term 4 Begin event for 2027: 2027-12-12 00:00:00
+Added Holiday Middle event for Term 1 2024: 2024-04-21 00:00:00
+Added Holiday Middle event for Term 1 2025: 2025-04-20 00:00:00
+Added Holiday Middle event for Term 1 2026: 2026-04-19 00:00:00
+Added Holiday Middle event for Term 1 2027: 2027-04-18 00:00:00
+Added Holiday Middle event for Term 2 2024: 2024-07-14 00:00:00
+Added Holiday Middle event for Term 2 2025: 2025-07-13 00:00:00
+Added Holiday Middle event for Term 2 2026: 2026-07-12 00:00:00
+Added Holiday Middle event for Term 2 2027: 2027-07-11 00:00:00
+Added Holiday Middle event for Term 3 2024: 2024-09-21 00:00:00
+Added Holiday Middle event for Term 3 2025: 2025-09-20 00:00:00
+Added Holiday Middle event for Term 3 2026: 2026-09-19 00:00:00
+Added Holiday Middle event for Term 3 2027: 2027-09-18 00:00:00
+Added Holiday Middle event for Term 4 2024: 2024-12-07 00:00:00
+Added Holiday Middle event for Term 4 2025: 2025-12-06 00:00:00
+Added Holiday Middle event for Term 4 2026: 2026-12-05 00:00:00
+Added Holiday Middle event for Term 4 2027: 2027-12-04 00:00:00
+Total events in calendar: 104
+Creating iCalendar file...
+Writing calendar to Public-Holiday-Calendar-SA.ics...
+Successfully wrote calendar to Public-Holiday-Calendar-SA.ics
+Configuring Git...
+Adding files to Git...
+Committing changes...
+Git commit output: [main 68ab47a] update sa public holiday calendar
+ 1 file changed, 19 insertions(+), 84 deletions(-)
+
+Pushing changes to GitHub...
+Git push output: To https://github.com/BludReaver/Public-Holiday-Calendar-SA
+   bdcdf76..68ab47a  main -> main
+
+Calculating next update time...
+Next scheduled update: 1st July 2025 at 10:30AM
+Sending success notification via Pushover...
+Notification message: Success! SA Public Holidays Updated
+
+SA Public Holiday calendar was successfully updated via GitHub!
+
+Next auto-update:
+1st July 2025 at 10:30AM
+
+Have a nice day!
+Pushover response: 200 - {"status":1,"request":"6d65bb7d-bc00-4313-88f8-fc9779f50812"}
+Calendar update completed successfully!
