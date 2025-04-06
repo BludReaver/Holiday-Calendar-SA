@@ -24,15 +24,15 @@ TIMEZONE = "Australia/Adelaide"
 def send_failure_notification(error_excerpt: str):
     """Send a notification about update failure using Pushover API."""
     msg = (
-        "!! SA Calendar Update Failed !!\n\n"
-        "Your SA Public Holiday calendar could not be updated. Check the following:\n\n"
+        "‼️ SA Calendar Update Failed ‼️\n\n"
+        "Your SA Public Holiday calendar could not be updated... Check the following: 🔎\n\n"
         "1. Go to your GitHub repository.\n"
         "2. Click the Actions tab.\n"
         "3. Open the failed workflow.\n"
         "4. Check which step failed.\n\n"
-        f"Main site: {URL}\n"
-        f"Calendar source: {URL}\n\n"
-        f"Error Log:\n{error_excerpt}"
+        f"🌐 Main site: {URL}\n"
+        f"📅 Calendar source: {URL}\n\n"
+        f"📝 Error Log:\n{error_excerpt}"
     )
     
     print(f"Sending failure notification...")
@@ -561,10 +561,10 @@ try:
         # Prepare success notification
         log.write("Sending success notification via Pushover...\n")
         notification_message = (
-            "Success! SA Public Holidays Updated\n\n"
+            "✅ SA Public Holidays Updated ✅\n\n"
             "SA Public Holiday calendar was successfully updated via GitHub!\n\n"
-            f"Next auto-update:\n{formatted_date}\n\n"
-            "Have a nice day!"
+            f"🕒 Next auto-update:\n{formatted_date}\n\n"
+            "🌞 Have a nice day! 🌞"
         )
         log.write(f"Notification message: {notification_message}\n")
         

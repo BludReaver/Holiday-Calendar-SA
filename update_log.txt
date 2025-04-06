@@ -804,23 +804,23 @@ Successfully wrote calendar to Public-Holiday-Calendar-SA.ics
 Configuring Git...
 Adding files to Git...
 Committing changes...
-Git commit output: [main 68ab47a] update sa public holiday calendar
- 1 file changed, 19 insertions(+), 84 deletions(-)
+Git commit output: [main 320bc3e] update sa public holiday calendar
+ 1 file changed, 64 deletions(-)
 
 Pushing changes to GitHub...
 Git push output: To https://github.com/BludReaver/Public-Holiday-Calendar-SA
-   bdcdf76..68ab47a  main -> main
+   757a81d..320bc3e  main -> main
 
 Calculating next update time...
 Next scheduled update: 1st July 2025 at 10:30AM
 Sending success notification via Pushover...
-Notification message: Success! SA Public Holidays Updated
+Notification message: ✅ SA Public Holidays Updated ✅
 
 SA Public Holiday calendar was successfully updated via GitHub!
 
-Next auto-update:
+🕒 Next auto-update:
 1st July 2025 at 10:30AM
 
-Have a nice day!
-Pushover response: 200 - {"status":1,"request":"6d65bb7d-bc00-4313-88f8-fc9779f50812"}
+🌞 Have a nice day! 🌞
+Pushover response: 200 - {"status":1,"request":"510cbacc-1c26-4581-91d9-5dcc3bb2f337"}
 Calendar update completed successfully!
