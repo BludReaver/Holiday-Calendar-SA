@@ -3,12 +3,20 @@ import requests
 import os
 import sys
 from datetime import datetime, timedelta
+import uuid
+from typing import List, Dict, Tuple, Optional
 
 # Configuration settings
 TEST_MODE = False  # Set to True to test error notifications
-ICS_URL = "https://www.officeholidays.com/ics-all/australia/south-australia"  # Restored original URL
-OUTPUT_FILE = "SA-Public-Holidays.ics"  # Updated filename to match new repository
-URL = ICS_URL  # Used in notifications
+ERROR_SIMULATION = None  # Can be set to: "public_holidays", "school_terms", "both", "connection", "404", "permission", "no_terms", or None
+ICS_URL = "https://www.officeholidays.com/ics-all/australia/south-australia"  # Public holidays URL
+SCHOOL_TERMS_URL = "https://www.education.sa.gov.au/docs/sper/communications/term-calendar/ical-School-term-dates-calendar-2025.ics"  # School terms URL
+OUTPUT_FILE = "SA-Public-Holidays.ics"  # Public holidays output file
+SCHOOL_OUTPUT_FILE = "SA-School-Terms-Holidays.ics"  # School terms and holidays output file
+
+# Updated notification URLs - more accurate for the error notifications
+PUBLIC_HOLIDAYS_SOURCE_URL = "https://www.officeholidays.com/subscribe/australia/south-australia"
+SCHOOL_TERMS_SOURCE_URL = "https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools"
 
 def clean_event_name(summary: str) -> str:
     return re.sub(r"\s*\([^)]*\)", "", summary).strip()
@@ -39,7 +47,14 @@ def get_next_update_date():
     # Format the full date string
     return next_date.strftime(f"%A {day}{suffix} %B %Y")
 
-def send_failure_notification(error_excerpt: str):
+def send_failure_notification(error_excerpt: str, failed_calendar=None):
+    """
+    Send a failure notification with information about which calendar failed.
+    
+    Parameters:
+        error_excerpt: The error message to include
+        failed_calendar: Optional identifier of which calendar failed (public_holidays, school_terms, or None for general failure)
+    """
     # Get Pushover credentials from environment variables
     token = os.environ.get("PUSHOVER_API_TOKEN")  # Updated from APP_TOKEN to API_TOKEN
     user = os.environ.get("PUSHOVER_USER_KEY")
@@ -49,17 +64,32 @@ def send_failure_notification(error_excerpt: str):
         print("⚠️ Pushover credentials not configured. Skipping failure notification.")
         print(f"Error: {error_excerpt}")
         return
+    
+    # Determine which calendar failed and set appropriate sources
+    calendar_info = ""
+    calendar_source = ""
+    
+    if failed_calendar == "public_holidays":
+        calendar_info = "📅 Public Holidays Calendar update failed\n\n"
+        calendar_source = f"🔗 Calendar Source: {PUBLIC_HOLIDAYS_SOURCE_URL}\n\n"
+    elif failed_calendar == "school_terms":
+        calendar_info = "📅 School Terms Calendar update failed\n\n"
+        calendar_source = f"🔗 Calendar Source: {SCHOOL_TERMS_SOURCE_URL}\n\n"
+    else:
+        calendar_info = "📅 Calendar update failed\n\n"
+        calendar_source = f"🔗 Calendar Sources:\n- Public Holidays: {PUBLIC_HOLIDAYS_SOURCE_URL}\n- School Terms: {SCHOOL_TERMS_SOURCE_URL}\n\n"
         
     import httpx
     message = (
         "‼️ SA Calendar Update Failed ‼️\n\n"
-        "Your SA Public Holiday calendar could not be updated... Check the following: 🔎\n\n"
+        f"{calendar_info}"
+        "Check the following: 🔎\n\n"
         "1. Go to your GitHub repository.\n"
         "2. Click the Actions tab.\n"
         "3. Open the failed workflow.\n"
         "4. Check which step failed.\n\n"
         f"🌐 Actions: https://github.com/BludReaver/Public-Holiday-Calendar-SA/actions\n\n"
-        f"📅 Calendar source: {URL}\n\n"
+        f"{calendar_source}"
         f"📝 Error Log:\n{error_excerpt}"
     )
 
@@ -88,8 +118,11 @@ def send_success_notification():
     next_update = get_next_update_date()
 
     message = (
-        "✅ SA Public Holidays Updated ✅\n\n"
-        "SA Public Holiday calendar was successfully updated via GitHub!\n\n"
+        "✅ SA Calendars Updated ✅\n\n"
+        "Your calendars were successfully updated via GitHub!\n\n"
+        "📅 Updated calendars:\n"
+        "- SA Public Holidays\n"
+        "- SA School Terms & Holidays\n\n"
         f"🕒 Next update: {next_update}\n\n"
         "🌞 Have a nice day! 🌞"
     )
@@ -105,64 +138,335 @@ def send_success_notification():
     else:
         print(f"❌ Failed to send notification: {response.text}")
 
+def parse_ics_date(date_str: str) -> datetime:
+    """Parse a date string from ICS format (YYYYMMDD) to datetime object"""
+    year = int(date_str[0:4])
+    month = int(date_str[4:6])
+    day = int(date_str[6:8])
+    return datetime(year, month, day)
+
+def extract_term_dates(content: str) -> List[Dict[str, datetime]]:
+    """Extract term start and end dates from the school terms ICS content"""
+    terms = []
+    current_term = {}
+    
+    lines = content.splitlines()
+    in_event = False
+    
+    for i, line in enumerate(lines):
+        if line == "BEGIN:VEVENT":
+            in_event = True
+            current_term = {}
+        elif line == "END:VEVENT" and in_event:
+            if "start" in current_term and "end" in current_term and "summary" in current_term:
+                terms.append(current_term)
+            in_event = False
+        elif in_event:
+            if line.startswith("DTSTART;VALUE=DATE:"):
+                date_str = line.split(":", 1)[1]
+                current_term["start"] = parse_ics_date(date_str)
+            elif line.startswith("DTEND;VALUE=DATE:"):
+                date_str = line.split(":", 1)[1]
+                # In ICS, end dates are exclusive, so subtract one day
+                current_term["end"] = parse_ics_date(date_str) - timedelta(days=1)
+            elif line.startswith("SUMMARY"):
+                summary = line.split(":", 1)[1]
+                current_term["summary"] = summary
+    
+    return terms
+
+def generate_holiday_periods(terms: List[Dict[str, datetime]]) -> List[Dict[str, datetime]]:
+    """Generate holiday periods between terms"""
+    if not terms:
+        return []
+    
+    # Sort terms by start date
+    sorted_terms = sorted(terms, key=lambda x: x["start"])
+    
+    holidays = []
+    
+    # Add holidays between terms
+    for i in range(len(sorted_terms) - 1):
+        current_term_end = sorted_terms[i]["end"]
+        next_term_start = sorted_terms[i+1]["start"]
+        
+        # Only add if there's a gap
+        if next_term_start > current_term_end + timedelta(days=1):
+            holiday_start = current_term_end + timedelta(days=1)
+            holiday_end = next_term_start - timedelta(days=1)
+            
+            term_number = sorted_terms[i]["summary"].strip().split(" ")[-1]
+            next_term_number = sorted_terms[i+1]["summary"].strip().split(" ")[-1]
+            
+            holidays.append({
+                "start": holiday_start,
+                "end": holiday_end,
+                "summary": f"School Holidays (After Term {term_number})"
+            })
+    
+    return holidays
+
+def format_ics_datetime(dt: datetime) -> str:
+    """Format a datetime object as an ICS date (YYYYMMDD)"""
+    return dt.strftime("%Y%m%d")
+
+def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Dict[str, datetime]]) -> str:
+    """Generate a complete ICS calendar with terms and holidays"""
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//SA School Terms and Holidays//EN",
+        "X-WR-CALNAME:SA School Terms and Holidays",
+        "X-WR-CALDESC:School terms and holiday periods in South Australia",
+        "CALSCALE:GREGORIAN"
+    ]
+    
+    # Add term START dates
+    for term in terms:
+        term_lines = [
+            "BEGIN:VEVENT",
+            f"SUMMARY:{term['summary']} Start",
+            f"DTSTART;VALUE=DATE:{format_ics_datetime(term['start'])}",
+            f"DTEND;VALUE=DATE:{format_ics_datetime(term['start'] + timedelta(days=1))}",
+            f"UID:{str(uuid.uuid4())}",
+            "SEQUENCE:0",
+            f"DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}",
+            "TRANSP:OPAQUE",
+            "END:VEVENT"
+        ]
+        lines.extend(term_lines)
+    
+    # Add term END dates
+    for term in terms:
+        term_lines = [
+            "BEGIN:VEVENT",
+            f"SUMMARY:{term['summary']} End",
+            f"DTSTART;VALUE=DATE:{format_ics_datetime(term['end'])}",
+            f"DTEND;VALUE=DATE:{format_ics_datetime(term['end'] + timedelta(days=1))}",
+            f"UID:{str(uuid.uuid4())}",
+            "SEQUENCE:0",
+            f"DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}",
+            "TRANSP:OPAQUE",
+            "END:VEVENT"
+        ]
+        lines.extend(term_lines)
+    
+    # Add holiday events
+    for holiday in holidays:
+        holiday_lines = [
+            "BEGIN:VEVENT",
+            f"SUMMARY:{holiday['summary']}",
+            f"DTSTART;VALUE=DATE:{format_ics_datetime(holiday['start'])}",
+            # ICS dates are exclusive for DTEND, so add 1 day
+            f"DTEND;VALUE=DATE:{format_ics_datetime(holiday['end'] + timedelta(days=1))}",
+            f"UID:{str(uuid.uuid4())}",
+            "SEQUENCE:0",
+            f"DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}",
+            "TRANSP:OPAQUE",
+            "END:VEVENT"
+        ]
+        lines.extend(holiday_lines)
+    
+    lines.append("END:VCALENDAR")
+    return "\n".join(lines)
+
+def update_public_holidays():
+    """Update the public holidays calendar"""
+    print(f"📅 Downloading public holidays from {ICS_URL}...")
+    
+    # Simulate errors if in test mode
+    if TEST_MODE and ERROR_SIMULATION:
+        if ERROR_SIMULATION in ["public_holidays", "both", "connection"]:
+            raise requests.exceptions.ConnectionError("Simulated connection error for public holidays")
+        elif ERROR_SIMULATION == "404":
+            raise requests.exceptions.HTTPError("404 Client Error: Not Found for url: " + ICS_URL)
+        elif ERROR_SIMULATION == "permission":
+            raise PermissionError("Simulated permission error for public holidays")
+    
+    response = requests.get(ICS_URL)
+    response.raise_for_status()
+    content = response.text
+    
+    print("🧹 Cleaning event names...")
+    cleaned_lines = []
+    for line in content.splitlines():
+        if line.startswith("SUMMARY"):
+            # Find the position of the colon that separates the attribute from the value
+            colon_pos = line.find(":")
+            if colon_pos > -1:
+                # Extract everything before the colon (including the colon)
+                summary_prefix = line[:colon_pos+1]
+                # Extract everything after the colon (the summary value)
+                summary_value = line[colon_pos+1:]
+                # Clean the summary value
+                cleaned_summary = clean_event_name(summary_value)
+                # Reconstruct the line
+                clean_line = f"{summary_prefix}{cleaned_summary}"
+                cleaned_lines.append(clean_line)
+            else:
+                # If no colon is found (shouldn't happen), keep the line as is
+                cleaned_lines.append(line)
+        else:
+            cleaned_lines.append(line)
+
+    print(f"💾 Saving public holidays to {OUTPUT_FILE}...")
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        f.write("\n".join(cleaned_lines))
+    
+    print("✅ Public holidays calendar updated successfully!")
+
+def update_school_terms():
+    """Update the school terms and holidays calendar"""
+    print(f"📅 Downloading school terms from {SCHOOL_TERMS_URL}...")
+    
+    # Simulate errors if in test mode
+    if TEST_MODE and ERROR_SIMULATION:
+        if ERROR_SIMULATION in ["school_terms", "both", "connection"]:
+            raise requests.exceptions.ConnectionError("Simulated connection error for school terms")
+        elif ERROR_SIMULATION == "404":
+            raise requests.exceptions.HTTPError("404 Client Error: Not Found for url: " + SCHOOL_TERMS_URL)
+        elif ERROR_SIMULATION == "permission":
+            raise PermissionError("Simulated permission error for school terms")
+        elif ERROR_SIMULATION == "no_terms":
+            # Return empty content that will lead to "No school terms found"
+            response = requests.Response()
+            response.status_code = 200
+            response._content = b"BEGIN:VCALENDAR\nEND:VCALENDAR"
+            response.raise_for_status()
+            content = response._content.decode('utf-8')
+            
+            # Process the rest normally, which will lead to the "No school terms found" error
+            print("🔍 Extracting term dates...")
+            terms = extract_term_dates(content)
+            
+            if not terms:
+                raise Exception("No school terms found in the calendar")
+            
+            return
+    
+    response = requests.get(SCHOOL_TERMS_URL)
+    response.raise_for_status()
+    content = response.text
+    
+    print("🔍 Extracting term dates...")
+    terms = extract_term_dates(content)
+    
+    if not terms:
+        raise Exception("No school terms found in the calendar")
+    
+    print(f"Found {len(terms)} school terms")
+    
+    print("🌞 Generating school holiday periods...")
+    holidays = generate_holiday_periods(terms)
+    
+    print(f"Generated {len(holidays)} holiday periods")
+    
+    print("📝 Creating new calendar with terms and holidays...")
+    calendar_content = generate_school_calendar(terms, holidays)
+    
+    print(f"💾 Saving school terms and holidays to {SCHOOL_OUTPUT_FILE}...")
+    with open(SCHOOL_OUTPUT_FILE, "w", encoding="utf-8") as f:
+        f.write(calendar_content)
+    
+    print("✅ School terms and holidays calendar updated successfully!")
+
 def main():
     try:
         # Test mode check
-        if TEST_MODE:
-            print("🧪 TEST MODE ACTIVE - Simulating an error...")
+        if TEST_MODE and not ERROR_SIMULATION:
+            print("🧪 TEST MODE ACTIVE - Simulating a general error...")
             raise Exception("Test mode is enabled. This is a simulated error to test the notification system.")
             
-        print(f"📅 Downloading calendar from {ICS_URL}...")
-        response = requests.get(ICS_URL)
-        response.raise_for_status()
-        content = response.text
+        # Track which parts succeeded
+        public_holidays_success = False
+        school_terms_success = False
         
-        print("🧹 Cleaning event names...")
-        cleaned_lines = []
-        for line in content.splitlines():
-            if line.startswith("SUMMARY"):
-                # Find the position of the colon that separates the attribute from the value
-                colon_pos = line.find(":")
-                if colon_pos > -1:
-                    # Extract everything before the colon (including the colon)
-                    summary_prefix = line[:colon_pos+1]
-                    # Extract everything after the colon (the summary value)
-                    summary_value = line[colon_pos+1:]
-                    # Clean the summary value
-                    cleaned_summary = clean_event_name(summary_value)
-                    # Reconstruct the line
-                    clean_line = f"{summary_prefix}{cleaned_summary}"
-                    cleaned_lines.append(clean_line)
-                else:
-                    # If no colon is found (shouldn't happen), keep the line as is
-                    cleaned_lines.append(line)
+        try:
+            # Update public holidays calendar
+            update_public_holidays()
+            public_holidays_success = True
+        except requests.exceptions.ConnectionError as e:
+            error_message = str(e)
+            print(f"❌ Connection error updating public holidays calendar: {error_message}")
+            user_friendly_error = "Couldn't download the public holidays. The website might be down or the internet connection might be having problems."
+            send_failure_notification(user_friendly_error, "public_holidays")
+        except requests.exceptions.HTTPError as e:
+            error_message = str(e)
+            print(f"❌ HTTP error updating public holidays calendar: {error_message}")
+            if "404" in error_message:
+                user_friendly_error = "The calendar file couldn't be found. The website might have moved or renamed their calendar files."
             else:
-                cleaned_lines.append(line)
-
-
-        print(f"💾 Saving to {OUTPUT_FILE}...")
-        with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-            f.write("\n".join(cleaned_lines))
+                user_friendly_error = f"Received an error from the public holidays website: {error_message}"
+            send_failure_notification(user_friendly_error, "public_holidays")
+        except PermissionError as e:
+            error_message = str(e)
+            print(f"❌ Permission error updating public holidays calendar: {error_message}")
+            user_friendly_error = "The script doesn't have permission to save the calendar files. GitHub Actions might need updated permissions."
+            send_failure_notification(user_friendly_error, "public_holidays")
+        except Exception as e:
+            error_message = str(e)
+            print(f"❌ Error updating public holidays calendar: {error_message}")
+            user_friendly_error = f"An error occurred updating the public holidays calendar: {error_message}"
+            send_failure_notification(user_friendly_error, "public_holidays")
             
-        print("✅ Calendar updated successfully!")
-        send_success_notification()
+        try:
+            # Update school terms and holidays calendar
+            update_school_terms()
+            school_terms_success = True
+        except requests.exceptions.ConnectionError as e:
+            error_message = str(e)
+            print(f"❌ Connection error updating school terms calendar: {error_message}")
+            user_friendly_error = "Couldn't download the school terms calendar. The website might be down or the internet connection might be having problems."
+            send_failure_notification(user_friendly_error, "school_terms")
+        except requests.exceptions.HTTPError as e:
+            error_message = str(e)
+            print(f"❌ HTTP error updating school terms calendar: {error_message}")
+            if "404" in error_message:
+                user_friendly_error = "The school terms calendar file couldn't be found. The website might have moved or renamed their calendar files."
+            else:
+                user_friendly_error = f"Received an error from the school terms website: {error_message}"
+            send_failure_notification(user_friendly_error, "school_terms")
+        except PermissionError as e:
+            error_message = str(e)
+            print(f"❌ Permission error updating school terms calendar: {error_message}")
+            user_friendly_error = "The script doesn't have permission to save the calendar files. GitHub Actions might need updated permissions."
+            send_failure_notification(user_friendly_error, "school_terms")
+        except Exception as e:
+            error_message = str(e)
+            print(f"❌ Error updating school terms calendar: {error_message}")
+            if "No school terms found" in error_message:
+                user_friendly_error = "No school terms were found in the calendar. The website might have changed how they organize their data."
+            else:
+                user_friendly_error = f"An error occurred updating the school terms calendar: {error_message}"
+            send_failure_notification(user_friendly_error, "school_terms")
+        
+        # Only send success notification if both calendars updated successfully
+        if public_holidays_success and school_terms_success:
+            send_success_notification()
+        else:
+            print("⚠️ One or more calendars failed to update, skipping success notification")
+            
+        # If either calendar failed, exit with error code
+        if not (public_holidays_success and school_terms_success):
+            sys.exit(1)
 
     except Exception as e:
+        # This is for errors that happen outside of the specific calendar updates
         error_message = str(e)
         
         # Create a more user-friendly error message
-        if TEST_MODE:
-            user_friendly_error = "TEST MODE is enabled. This is a simulated error to verify that notifications are working correctly. No actual issue with the calendar."
+        if TEST_MODE and not ERROR_SIMULATION:
+            user_friendly_error = "This is just a test. Test Mode is turned on. Nothing is actually wrong with the calendars."
         elif "Connection" in error_message or "Timeout" in error_message:
-            user_friendly_error = f"Could not connect to the holidays website. The site might be down or there might be internet connectivity issues. Technical details: {error_message}"
+            user_friendly_error = "Couldn't connect to the calendar websites. The sites might be down or the internet connection might be having problems."
         elif "404" in error_message:
-            user_friendly_error = "The calendar URL has changed or is no longer available. Please check if the website structure has been updated."
+            user_friendly_error = "The calendar files couldn't be found. The websites might have moved or renamed their files."
         elif "Permission" in error_message:
-            user_friendly_error = "Permission denied when trying to save the calendar file. Check GitHub Actions permissions."
+            user_friendly_error = "The script doesn't have permission to save the calendar files. GitHub Actions might need updated permissions."
         else:
             user_friendly_error = f"An unexpected error occurred: {error_message}"
             
-        print(f"❌ Error updating calendar: {error_message}")
+        print(f"❌ Error updating calendars: {error_message}")
         send_failure_notification(user_friendly_error)
         
         # Exit with non-zero status code to make the GitHub Actions workflow fail
