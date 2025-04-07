@@ -1,11 +1,28 @@
+import io
+import sys
+
+# Set UTF-8 encoding for stdout to properly handle emoji characters
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
 import re
 import requests
 import os
-import sys
 from datetime import datetime, timedelta
 import uuid
 from typing import List, Dict, Tuple, Optional
 from bs4 import BeautifulSoup
+
+# Use text-based symbols as fallbacks for emoji in case of console encoding issues
+EMOJI_CHECK = "✅"  # Success
+EMOJI_WARNING = "⚠️"  # Warning
+EMOJI_ERROR = "❌"  # Error
+EMOJI_CALENDAR = "📅"  # Calendar
+EMOJI_SAVE = "💾"  # Save
+EMOJI_SEARCH = "🔍"  # Search
+EMOJI_CRYSTAL_BALL = "🔮"  # Future prediction
+EMOJI_SUN = "🌞"  # Sun
+EMOJI_PLUS = "➕"  # Plus
+EMOJI_PENCIL = "📝"  # Pencil
 
 # Configuration settings
 TEST_MODE = False  # Set to True to test error notifications
@@ -63,7 +80,7 @@ def send_failure_notification(error_excerpt: str, failed_calendar=None):
     
     # Skip notification if credentials are missing
     if not token or not user or token == "YOUR_PUSHOVER_API_TOKEN" or user == "YOUR_PUSHOVER_USER_KEY":
-        print("⚠️ Pushover credentials not configured. Skipping failure notification.")
+        print(f"{EMOJI_WARNING} Pushover credentials not configured. Skipping failure notification.")
         print(f"Error: {error_excerpt}")
         return
     
@@ -72,16 +89,16 @@ def send_failure_notification(error_excerpt: str, failed_calendar=None):
     calendar_source = ""
     
     if failed_calendar == "public_holidays":
-        calendar_info = "📅 Public Holidays Calendar update failed\n\n"
+        calendar_info = f"{EMOJI_CALENDAR} Public Holidays Calendar update failed\n\n"
         calendar_source = f"🔗 Calendar Source: {PUBLIC_HOLIDAYS_SOURCE_URL}\n\n"
     elif failed_calendar == "school_terms":
-        calendar_info = "📅 School Terms Calendar update failed\n\n"
+        calendar_info = f"{EMOJI_CALENDAR} School Terms Calendar update failed\n\n"
         calendar_source = f"🔗 Calendar Source: {SCHOOL_TERMS_SOURCE_URL}\n\n"
     elif failed_calendar == "future_term":
-        calendar_info = "📅 Future Term 1 Start Date update failed\n\n"
+        calendar_info = f"{EMOJI_CALENDAR} Future Term 1 Start Date update failed\n\n"
         calendar_source = f"🔗 Calendar Source: {FUTURE_TERMS_URL}\n\n"
     else:
-        calendar_info = "📅 Calendar update failed\n\n"
+        calendar_info = f"{EMOJI_CALENDAR} Calendar update failed\n\n"
         calendar_source = f"🔗 Calendar Sources:\n- Public Holidays: {PUBLIC_HOLIDAYS_SOURCE_URL}\n- School Terms: {SCHOOL_TERMS_SOURCE_URL}\n- Future Terms: {FUTURE_TERMS_URL}\n\n"
         
     import httpx
@@ -105,9 +122,9 @@ def send_failure_notification(error_excerpt: str, failed_calendar=None):
     })
     
     if response.status_code == 200:
-        print("✅ Failure notification sent")
+        print(f"{EMOJI_CHECK} Failure notification sent")
     else:
-        print(f"❌ Failed to send notification: {response.text}")
+        print(f"{EMOJI_ERROR} Failed to send notification: {response.text}")
 
 def send_success_notification(future_term_fetched=True):
     """
@@ -122,7 +139,7 @@ def send_success_notification(future_term_fetched=True):
     
     # Skip notification if credentials are missing
     if not token or not user or token == "YOUR_PUSHOVER_API_TOKEN" or user == "YOUR_PUSHOVER_USER_KEY":
-        print("⚠️ Pushover credentials not configured. Skipping success notification.")
+        print(f"{EMOJI_WARNING} Pushover credentials not configured. Skipping success notification.")
         return
         
     import httpx
@@ -130,17 +147,17 @@ def send_success_notification(future_term_fetched=True):
     
     future_term_message = ""
     if not future_term_fetched:
-        future_term_message = "⚠️ Note: Future Term 1 dates could not be fetched but the current term dates are available.\n\n"
+        future_term_message = f"{EMOJI_WARNING} Note: Future Term 1 dates could not be fetched but the current term dates are available.\n\n"
 
     message = (
-        "✅ SA Calendars Updated ✅\n\n"
+        f"{EMOJI_CHECK} SA Calendars Updated {EMOJI_CHECK}\n\n"
         "Your calendars were successfully updated via GitHub!\n\n"
-        "📅 Updated calendars:\n"
+        f"{EMOJI_CALENDAR} Updated calendars:\n"
         "- SA Public Holidays\n"
         "- SA School Terms & Holidays\n\n"
         f"{future_term_message}"
         f"🕒 Next update: {next_update}\n\n"
-        "🌞 Have a nice day! 🌞"
+        f"{EMOJI_SUN} Have a nice day! {EMOJI_SUN}"
     )
 
     response = httpx.post("https://api.pushover.net/1/messages.json", data={
@@ -150,9 +167,9 @@ def send_success_notification(future_term_fetched=True):
     })
     
     if response.status_code == 200:
-        print("✅ Success notification sent")
+        print(f"{EMOJI_CHECK} Success notification sent")
     else:
-        print(f"❌ Failed to send notification: {response.text}")
+        print(f"{EMOJI_ERROR} Failed to send notification: {response.text}")
 
 def parse_ics_date(date_str: str) -> datetime:
     """Parse a date string from ICS format (YYYYMMDD) to datetime object"""
@@ -399,7 +416,7 @@ def get_future_term1_date() -> Optional[Dict[str, datetime]]:
     Fetches the future Term 1 start date from the education website.
     Returns a dictionary with start date and summary if found, None otherwise.
     """
-    print(f"🔮 Checking for future Term 1 start date from {FUTURE_TERMS_URL}...")
+    print(f"{EMOJI_CRYSTAL_BALL} Checking for future Term 1 start date from {FUTURE_TERMS_URL}...")
     
     # We've moved the simulation check to the update_school_terms function
     
@@ -418,14 +435,14 @@ def get_future_term1_date() -> Optional[Dict[str, datetime]]:
                 break
         
         if not future_term_heading:
-            print("⚠️ Future term dates heading not found on the page")
+            print(f"{EMOJI_WARNING} Future term dates heading not found on the page")
             return None
         
         # Find the table that follows this heading
         future_table = future_term_heading.find_next('table')
         
         if not future_table:
-            print("⚠️ Future term dates table not found on the page")
+            print(f"{EMOJI_WARNING} Future term dates table not found on the page")
             return None
         
         # Get the current year
@@ -457,7 +474,7 @@ def get_future_term1_date() -> Optional[Dict[str, datetime]]:
                 break
         
         if not target_year or not term1_text:
-            print(f"⚠️ Could not find term dates for year {next_year}")
+            print(f"{EMOJI_WARNING} Could not find term dates for year {next_year}")
             return None
         
         # Parse the term 1 date range, which is in format like "27 January to 10 April"
@@ -466,7 +483,7 @@ def get_future_term1_date() -> Optional[Dict[str, datetime]]:
         term1_parts = term1_text.split('to')
         
         if len(term1_parts) != 2:
-            print(f"⚠️ Unexpected format for Term 1 date: {term1_text}")
+            print(f"{EMOJI_WARNING} Unexpected format for Term 1 date: {term1_text}")
             return None
         
         start_date_str = term1_parts[0].strip()
@@ -478,7 +495,7 @@ def get_future_term1_date() -> Optional[Dict[str, datetime]]:
             start_date = datetime.strptime(f"{start_date_str} {target_year}", "%d %B %Y")
             end_date = datetime.strptime(f"{end_date_str} {target_year}", "%d %B %Y")
             
-            print(f"✅ Found future Term 1 date: {start_date.strftime('%B %d, %Y')} to {end_date.strftime('%B %d, %Y')}")
+            print(f"{EMOJI_CHECK} Found future Term 1 date: {start_date.strftime('%B %d, %Y')} to {end_date.strftime('%B %d, %Y')}")
             
             return {
                 "start": start_date,
@@ -486,16 +503,16 @@ def get_future_term1_date() -> Optional[Dict[str, datetime]]:
                 "summary": f"Term 1"
             }
         except ValueError as e:
-            print(f"⚠️ Error parsing future Term 1 date: {e}")
+            print(f"{EMOJI_WARNING} Error parsing future Term 1 date: {e}")
             return None
             
     except Exception as e:
-        print(f"⚠️ Error fetching future term dates: {e}")
+        print(f"{EMOJI_WARNING} Error fetching future term dates: {e}")
         return None
 
 def update_school_terms():
     """Update the school terms and holidays calendar"""
-    print(f"📅 Downloading school terms from {SCHOOL_TERMS_URL}...")
+    print(f"{EMOJI_CALENDAR} Downloading school terms from {SCHOOL_TERMS_URL}...")
     
     # Track if future term dates were successfully fetched
     future_term_success = True
@@ -517,7 +534,7 @@ def update_school_terms():
             content = response._content.decode('utf-8')
             
             # Process the rest normally, which will lead to the "No school terms found" error
-            print("🔍 Extracting term dates...")
+            print(f"{EMOJI_SEARCH} Extracting term dates...")
             terms = extract_term_dates(content)
             
             if not terms:
@@ -529,7 +546,7 @@ def update_school_terms():
     response.raise_for_status()
     content = response.text
     
-    print("🔍 Extracting term dates...")
+    print(f"{EMOJI_SEARCH} Extracting term dates...")
     terms = extract_term_dates(content)
     
     if not terms:
@@ -539,9 +556,9 @@ def update_school_terms():
     
     # Check for test mode error simulation for future term dates before trying to fetch them
     if TEST_MODE and ERROR_SIMULATION == "future_term":
-        print("⚠️ Simulating failure to fetch future term dates")
+        print(f"{EMOJI_WARNING} Simulating failure to fetch future term dates")
         future_term_success = False
-        print("⚠️ Continuing with existing term dates only")
+        print(f"{EMOJI_WARNING} Continuing with existing term dates only")
     else:
         # Try to get the future Term 1 start date
         try:
@@ -557,20 +574,20 @@ def update_school_terms():
                 )
                 
                 if not future_term_exists:
-                    print(f"➕ Adding future Term 1 (starting {future_term1['start'].strftime('%B %d, %Y')}) to the calendar")
+                    print(f"{EMOJI_PLUS} Adding future Term 1 (starting {future_term1['start'].strftime('%B %d, %Y')}) to the calendar")
                     terms.append(future_term1)
             else:
                 future_term_success = False
-                print("⚠️ No future Term 1 date could be found. Continuing with existing term dates only.")
+                print(f"{EMOJI_WARNING} No future Term 1 date could be found. Continuing with existing term dates only.")
         except Exception as e:
             future_term_success = False
-            print(f"⚠️ Failed to add future Term 1 date: {e}")
-            print("⚠️ Continuing with existing term dates only")
+            print(f"{EMOJI_WARNING} Failed to add future Term 1 date: {e}")
+            print(f"{EMOJI_WARNING} Continuing with existing term dates only")
     
     # Sort terms by start date to ensure proper order
     terms = sorted(terms, key=lambda x: x["start"])
     
-    print("🌞 Generating school holiday periods...")
+    print(f"{EMOJI_SUN} Generating school holiday periods...")
     holidays = generate_holiday_periods(terms)
     
     # Check if we need to add a year-end holiday period
@@ -600,7 +617,7 @@ def update_school_terms():
             )
             
             if not holiday_exists:
-                print(f"➕ Adding year-end holiday between Term 4 {year} and Term 1 {next_year}")
+                print(f"{EMOJI_PLUS} Adding year-end holiday between Term 4 {year} and Term 1 {next_year}")
                 holidays.append({
                     "start": term4["end"] + timedelta(days=1),
                     "end": term1_next["start"] - timedelta(days=1),
@@ -612,20 +629,20 @@ def update_school_terms():
     
     print(f"Generated {len(holidays)} holiday periods")
     
-    print("📝 Creating new calendar with terms and holidays...")
+    print(f"{EMOJI_PENCIL} Creating new calendar with terms and holidays...")
     calendar_content = generate_school_calendar(terms, holidays)
     
-    print(f"💾 Saving school terms and holidays to {SCHOOL_OUTPUT_FILE}...")
+    print(f"{EMOJI_SAVE} Saving school terms and holidays to {SCHOOL_OUTPUT_FILE}...")
     with open(SCHOOL_OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write(calendar_content)
     
-    print("✅ School terms and holidays calendar updated successfully!")
+    print(f"{EMOJI_CHECK} School terms and holidays calendar updated successfully!")
     
     return future_term_success
 
 def update_public_holidays():
     """Update the public holidays calendar"""
-    print(f"📅 Downloading public holidays from {ICS_URL}...")
+    print(f"{EMOJI_CALENDAR} Downloading public holidays from {ICS_URL}...")
     
     # Simulate errors if in test mode
     if TEST_MODE and ERROR_SIMULATION:
@@ -640,7 +657,7 @@ def update_public_holidays():
     response.raise_for_status()
     content = response.text
     
-    print("🧹 Cleaning event names...")
+    print(f"{EMOJI_WARNING} Cleaning event names...")
     cleaned_lines = []
     for line in content.splitlines():
         if line.startswith("SUMMARY"):
@@ -662,11 +679,11 @@ def update_public_holidays():
         else:
             cleaned_lines.append(line)
 
-    print(f"💾 Saving public holidays to {OUTPUT_FILE}...")
+    print(f"{EMOJI_SAVE} Saving public holidays to {OUTPUT_FILE}...")
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(cleaned_lines))
     
-    print("✅ Public holidays calendar updated successfully!")
+    print(f"{EMOJI_CHECK} Public holidays calendar updated successfully!")
 
 def main():
     try:
@@ -686,12 +703,12 @@ def main():
             public_holidays_success = True
         except requests.exceptions.ConnectionError as e:
             error_message = str(e)
-            print(f"❌ Connection error updating public holidays calendar: {error_message}")
+            print(f"{EMOJI_ERROR} Connection error updating public holidays calendar: {error_message}")
             user_friendly_error = "Couldn't download the public holidays. The website might be down or the internet connection might be having problems."
             send_failure_notification(user_friendly_error, "public_holidays")
         except requests.exceptions.HTTPError as e:
             error_message = str(e)
-            print(f"❌ HTTP error updating public holidays calendar: {error_message}")
+            print(f"{EMOJI_ERROR} HTTP error updating public holidays calendar: {error_message}")
             if "404" in error_message:
                 user_friendly_error = "The calendar file couldn't be found. The website might have moved or renamed their calendar files."
             else:
@@ -699,12 +716,12 @@ def main():
             send_failure_notification(user_friendly_error, "public_holidays")
         except PermissionError as e:
             error_message = str(e)
-            print(f"❌ Permission error updating public holidays calendar: {error_message}")
+            print(f"{EMOJI_ERROR} Permission error updating public holidays calendar: {error_message}")
             user_friendly_error = "The script doesn't have permission to save the calendar files. GitHub Actions might need updated permissions."
             send_failure_notification(user_friendly_error, "public_holidays")
         except Exception as e:
             error_message = str(e)
-            print(f"❌ Error updating public holidays calendar: {error_message}")
+            print(f"{EMOJI_ERROR} Error updating public holidays calendar: {error_message}")
             user_friendly_error = f"An error occurred updating the public holidays calendar: {error_message}"
             send_failure_notification(user_friendly_error, "public_holidays")
             
@@ -715,16 +732,16 @@ def main():
             
             # Log a warning if future term dates couldn't be fetched
             if not future_term_success and TEST_MODE and ERROR_SIMULATION == "future_term":
-                print("⚠️ Future term dates couldn't be fetched, but the calendar was updated with available term dates")
+                print(f"{EMOJI_WARNING} Future term dates couldn't be fetched, but the calendar was updated with available term dates")
                 # This is just a warning, not a fatal error
         except requests.exceptions.ConnectionError as e:
             error_message = str(e)
-            print(f"❌ Connection error updating school terms calendar: {error_message}")
+            print(f"{EMOJI_ERROR} Connection error updating school terms calendar: {error_message}")
             user_friendly_error = "Couldn't download the school terms calendar. The website might be down or the internet connection might be having problems."
             send_failure_notification(user_friendly_error, "school_terms")
         except requests.exceptions.HTTPError as e:
             error_message = str(e)
-            print(f"❌ HTTP error updating school terms calendar: {error_message}")
+            print(f"{EMOJI_ERROR} HTTP error updating school terms calendar: {error_message}")
             if "404" in error_message:
                 user_friendly_error = "The school terms calendar file couldn't be found. The website might have moved or renamed their calendar files."
             else:
@@ -732,12 +749,12 @@ def main():
             send_failure_notification(user_friendly_error, "school_terms")
         except PermissionError as e:
             error_message = str(e)
-            print(f"❌ Permission error updating school terms calendar: {error_message}")
+            print(f"{EMOJI_ERROR} Permission error updating school terms calendar: {error_message}")
             user_friendly_error = "The script doesn't have permission to save the calendar files. GitHub Actions might need updated permissions."
             send_failure_notification(user_friendly_error, "school_terms")
         except Exception as e:
             error_message = str(e)
-            print(f"❌ Error updating school terms calendar: {error_message}")
+            print(f"{EMOJI_ERROR} Error updating school terms calendar: {error_message}")
             if "No school terms found" in error_message:
                 user_friendly_error = "No school terms were found in the calendar. The website might have changed how they organize their data."
                 send_failure_notification(user_friendly_error, "school_terms")
@@ -749,9 +766,9 @@ def main():
         if public_holidays_success and school_terms_success:
             send_success_notification(future_term_success)
             if not future_term_success:
-                print("⚠️ Note: Future term dates couldn't be fetched, but the calendar was updated with available term dates")
+                print(f"{EMOJI_WARNING} Note: Future term dates couldn't be fetched, but the calendar was updated with available term dates")
         else:
-            print("⚠️ One or more calendars failed to update, skipping success notification")
+            print(f"{EMOJI_WARNING} One or more calendars failed to update, skipping success notification")
             
         # If either calendar failed, exit with error code
         if not (public_holidays_success and school_terms_success):
@@ -773,7 +790,7 @@ def main():
         else:
             user_friendly_error = f"An unexpected error occurred: {error_message}"
             
-        print(f"❌ Error updating calendars: {error_message}")
+        print(f"{EMOJI_ERROR} Error updating calendars: {error_message}")
         send_failure_notification(user_friendly_error)
         
         # Exit with non-zero status code to make the GitHub Actions workflow fail
