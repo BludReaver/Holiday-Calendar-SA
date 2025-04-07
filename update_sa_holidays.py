@@ -5,12 +5,14 @@ import sys
 from datetime import datetime, timedelta
 import uuid
 from typing import List, Dict, Tuple, Optional
+from bs4 import BeautifulSoup
 
 # Configuration settings
 TEST_MODE = False  # Set to True to test error notifications
 ERROR_SIMULATION = None  # Can be set to: "public_holidays", "school_terms", "both", "connection", "404", "permission", "no_terms", or None
 ICS_URL = "https://www.officeholidays.com/ics-all/australia/south-australia"  # Public holidays URL
 SCHOOL_TERMS_URL = "https://www.education.sa.gov.au/docs/sper/communications/term-calendar/ical-School-term-dates-calendar-2025.ics"  # School terms URL
+FUTURE_TERMS_URL = "https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools"  # Future term dates URL
 OUTPUT_FILE = "SA-Public-Holidays.ics"  # Public holidays output file
 SCHOOL_OUTPUT_FILE = "SA-School-Terms-Holidays.ics"  # School terms and holidays output file
 
@@ -335,6 +337,212 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
     lines.append("END:VCALENDAR")
     return "\n".join(lines)
 
+def get_future_term1_date() -> Optional[Dict[str, datetime]]:
+    """
+    Fetches the future Term 1 start date from the education website.
+    Returns a dictionary with start date and summary if found, None otherwise.
+    """
+    print(f"🔮 Checking for future Term 1 start date from {FUTURE_TERMS_URL}...")
+    
+    try:
+        response = requests.get(FUTURE_TERMS_URL)
+        response.raise_for_status()
+        
+        # Parse the HTML content
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Find the future term dates heading
+        future_term_heading = None
+        for heading in soup.find_all(['h2', 'h3']):
+            if 'future term dates' in heading.get_text().lower():
+                future_term_heading = heading
+                break
+        
+        if not future_term_heading:
+            print("⚠️ Future term dates heading not found on the page")
+            return None
+        
+        # Find the table that follows this heading
+        future_table = future_term_heading.find_next('table')
+        
+        if not future_table:
+            print("⚠️ Future term dates table not found on the page")
+            return None
+        
+        # Get the current year
+        current_year = datetime.now().year
+        next_year = current_year + 1
+        
+        # Find the row for the next year in the table
+        target_year = None
+        term1_text = None
+        
+        rows = future_table.find_all('tr')
+        
+        for row in rows:
+            # First column should be the year
+            year_cell = row.find('th')
+            if not year_cell or not year_cell.get_text().strip().isdigit():
+                continue
+                
+            year = int(year_cell.get_text().strip())
+            if year == next_year:
+                target_year = year
+                # Term 1 dates are in the first td cell (second column)
+                term1_cell = row.find('td')
+                if term1_cell:
+                    # Replace <br/> tags with spaces
+                    for br in term1_cell.find_all('br'):
+                        br.replace_with(' ')
+                    term1_text = term1_cell.get_text().strip()
+                break
+        
+        if not target_year or not term1_text:
+            print(f"⚠️ Could not find term dates for year {next_year}")
+            return None
+        
+        # Parse the term 1 date range, which is in format like "27 January to 10 April"
+        # Sometimes the format might have odd spacing due to <br/> tags
+        term1_text = re.sub(r'\s+', ' ', term1_text)  # Normalize whitespace
+        term1_parts = term1_text.split('to')
+        
+        if len(term1_parts) != 2:
+            print(f"⚠️ Unexpected format for Term 1 date: {term1_text}")
+            return None
+        
+        start_date_str = term1_parts[0].strip()
+        
+        # Parse the start date
+        try:
+            # Format is like "27 January"
+            start_date = datetime.strptime(f"{start_date_str} {target_year}", "%d %B %Y")
+            
+            print(f"✅ Found future Term 1 start date: {start_date.strftime('%B %d, %Y')}")
+            
+            return {
+                "start": start_date,
+                "end": start_date,  # Just placeholder, we only need the start date
+                "summary": f"Term 1"
+            }
+        except ValueError as e:
+            print(f"⚠️ Error parsing future Term 1 date: {e}")
+            return None
+            
+    except Exception as e:
+        print(f"⚠️ Error fetching future term dates: {e}")
+        return None
+
+def update_school_terms():
+    """Update the school terms and holidays calendar"""
+    print(f"📅 Downloading school terms from {SCHOOL_TERMS_URL}...")
+    
+    # Simulate errors if in test mode
+    if TEST_MODE and ERROR_SIMULATION:
+        if ERROR_SIMULATION in ["school_terms", "both", "connection"]:
+            raise requests.exceptions.ConnectionError("Simulated connection error for school terms")
+        elif ERROR_SIMULATION == "404":
+            raise requests.exceptions.HTTPError("404 Client Error: Not Found for url: " + SCHOOL_TERMS_URL)
+        elif ERROR_SIMULATION == "permission":
+            raise PermissionError("Simulated permission error for school terms")
+        elif ERROR_SIMULATION == "no_terms":
+            # Return empty content that will lead to "No school terms found"
+            response = requests.Response()
+            response.status_code = 200
+            response._content = b"BEGIN:VCALENDAR\nEND:VCALENDAR"
+            response.raise_for_status()
+            content = response._content.decode('utf-8')
+            
+            # Process the rest normally, which will lead to the "No school terms found" error
+            print("🔍 Extracting term dates...")
+            terms = extract_term_dates(content)
+            
+            if not terms:
+                raise Exception("No school terms found in the calendar")
+            
+            return
+    
+    response = requests.get(SCHOOL_TERMS_URL)
+    response.raise_for_status()
+    content = response.text
+    
+    print("🔍 Extracting term dates...")
+    terms = extract_term_dates(content)
+    
+    if not terms:
+        raise Exception("No school terms found in the calendar")
+    
+    print(f"Found {len(terms)} school terms")
+    
+    # Try to get the future Term 1 start date
+    future_term1 = get_future_term1_date()
+    
+    # If we found a future Term 1 date, add to terms if it's not already there
+    if future_term1:
+        # Check if this term already exists in our list
+        future_term_exists = any(
+            term["start"].year == future_term1["start"].year and 
+            term["summary"].strip().endswith("1")
+            for term in terms
+        )
+        
+        if not future_term_exists:
+            print(f"➕ Adding future Term 1 (starting {future_term1['start'].strftime('%B %d, %Y')}) to the calendar")
+            terms.append(future_term1)
+    
+    # Sort terms by start date to ensure proper order
+    terms = sorted(terms, key=lambda x: x["start"])
+    
+    print("🌞 Generating school holiday periods...")
+    holidays = generate_holiday_periods(terms)
+    
+    # Check if we need to add a year-end holiday period
+    # Find the latest Term 4 and the next year's Term 1 (if available)
+    terms_by_year = {}
+    for term in terms:
+        year = term["start"].year
+        term_num = term["summary"].strip().split(" ")[-1]
+        
+        if year not in terms_by_year:
+            terms_by_year[year] = {}
+        
+        terms_by_year[year][term_num] = term
+    
+    # Look for pairs of years where we have Term 4 of current year and Term 1 of next year
+    for year in sorted(terms_by_year.keys()):
+        next_year = year + 1
+        
+        if "4" in terms_by_year.get(year, {}) and next_year in terms_by_year and "1" in terms_by_year[next_year]:
+            term4 = terms_by_year[year]["4"]
+            term1_next = terms_by_year[next_year]["1"]
+            
+            # Check if there's already a holiday covering this period
+            holiday_exists = any(
+                holiday["start"] > term4["end"] and holiday["end"] < term1_next["start"]
+                for holiday in holidays
+            )
+            
+            if not holiday_exists:
+                print(f"➕ Adding year-end holiday between Term 4 {year} and Term 1 {next_year}")
+                holidays.append({
+                    "start": term4["end"] + timedelta(days=1),
+                    "end": term1_next["start"] - timedelta(days=1),
+                    "summary": f"School Holidays (After Term 4)"
+                })
+    
+    # Re-sort holidays by start date
+    holidays = sorted(holidays, key=lambda x: x["start"])
+    
+    print(f"Generated {len(holidays)} holiday periods")
+    
+    print("📝 Creating new calendar with terms and holidays...")
+    calendar_content = generate_school_calendar(terms, holidays)
+    
+    print(f"💾 Saving school terms and holidays to {SCHOOL_OUTPUT_FILE}...")
+    with open(SCHOOL_OUTPUT_FILE, "w", encoding="utf-8") as f:
+        f.write(calendar_content)
+    
+    print("✅ School terms and holidays calendar updated successfully!")
+
 def update_public_holidays():
     """Update the public holidays calendar"""
     print(f"📅 Downloading public holidays from {ICS_URL}...")
@@ -379,61 +587,6 @@ def update_public_holidays():
         f.write("\n".join(cleaned_lines))
     
     print("✅ Public holidays calendar updated successfully!")
-
-def update_school_terms():
-    """Update the school terms and holidays calendar"""
-    print(f"📅 Downloading school terms from {SCHOOL_TERMS_URL}...")
-    
-    # Simulate errors if in test mode
-    if TEST_MODE and ERROR_SIMULATION:
-        if ERROR_SIMULATION in ["school_terms", "both", "connection"]:
-            raise requests.exceptions.ConnectionError("Simulated connection error for school terms")
-        elif ERROR_SIMULATION == "404":
-            raise requests.exceptions.HTTPError("404 Client Error: Not Found for url: " + SCHOOL_TERMS_URL)
-        elif ERROR_SIMULATION == "permission":
-            raise PermissionError("Simulated permission error for school terms")
-        elif ERROR_SIMULATION == "no_terms":
-            # Return empty content that will lead to "No school terms found"
-            response = requests.Response()
-            response.status_code = 200
-            response._content = b"BEGIN:VCALENDAR\nEND:VCALENDAR"
-            response.raise_for_status()
-            content = response._content.decode('utf-8')
-            
-            # Process the rest normally, which will lead to the "No school terms found" error
-            print("🔍 Extracting term dates...")
-            terms = extract_term_dates(content)
-            
-            if not terms:
-                raise Exception("No school terms found in the calendar")
-            
-            return
-    
-    response = requests.get(SCHOOL_TERMS_URL)
-    response.raise_for_status()
-    content = response.text
-    
-    print("🔍 Extracting term dates...")
-    terms = extract_term_dates(content)
-    
-    if not terms:
-        raise Exception("No school terms found in the calendar")
-    
-    print(f"Found {len(terms)} school terms")
-    
-    print("🌞 Generating school holiday periods...")
-    holidays = generate_holiday_periods(terms)
-    
-    print(f"Generated {len(holidays)} holiday periods")
-    
-    print("📝 Creating new calendar with terms and holidays...")
-    calendar_content = generate_school_calendar(terms, holidays)
-    
-    print(f"💾 Saving school terms and holidays to {SCHOOL_OUTPUT_FILE}...")
-    with open(SCHOOL_OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write(calendar_content)
-    
-    print("✅ School terms and holidays calendar updated successfully!")
 
 def main():
     try:
