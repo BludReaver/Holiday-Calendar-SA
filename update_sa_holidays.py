@@ -427,17 +427,19 @@ def get_future_term1_date() -> Optional[Dict[str, datetime]]:
             return None
         
         start_date_str = term1_parts[0].strip()
+        end_date_str = term1_parts[1].strip()
         
-        # Parse the start date
+        # Parse the start and end dates
         try:
-            # Format is like "27 January"
+            # Format is like "27 January" and "10 April"
             start_date = datetime.strptime(f"{start_date_str} {target_year}", "%d %B %Y")
+            end_date = datetime.strptime(f"{end_date_str} {target_year}", "%d %B %Y")
             
-            print(f"✅ Found future Term 1 start date: {start_date.strftime('%B %d, %Y')}")
+            print(f"✅ Found future Term 1 date: {start_date.strftime('%B %d, %Y')} to {end_date.strftime('%B %d, %Y')}")
             
             return {
                 "start": start_date,
-                "end": start_date,  # Just placeholder, we only need the start date
+                "end": end_date,
                 "summary": f"Term 1"
             }
         except ValueError as e:
