@@ -88,7 +88,7 @@ def send_failure_notification(error_excerpt: str, failed_calendar=None):
         "2. Click the Actions tab.\n"
         "3. Open the failed workflow.\n"
         "4. Check which step failed.\n\n"
-        f"🌐 Actions: https://github.com/BludReaver/Public-Holiday-Calendar-SA/actions\n\n"
+        f"🌐 Actions: https://github.com/BludReaver/Holiday-Calendar-SA/actions\n\n"
         f"{calendar_source}"
         f"📝 Error Log:\n{error_excerpt}"
     )
