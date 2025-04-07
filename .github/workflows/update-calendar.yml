@@ -12,6 +12,29 @@ on:
     # October (First few days might be ACST, rest is ACDT: UTC+10:30) - using ACST
     - cron: '30 1 1 10 *'
   workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Enable test mode for error simulation'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      error_simulation:
+        description: 'Type of error to simulate (only if test_mode is true)'
+        required: false
+        default: 'none'
+        type: choice
+        options:
+          - 'none'
+          - 'public_holidays'
+          - 'school_terms'
+          - 'future_term'
+          - 'connection'
+          - '404'
+          - 'permission'
+          - 'no_terms'
 
 jobs:
   update-calendars:
@@ -37,12 +60,28 @@ jobs:
           fi
 
       - name: Run update script
-        run: python update_sa_holidays.py
         env:
           PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
           PUSHOVER_API_TOKEN: ${{ secrets.PUSHOVER_API_TOKEN }}
+        continue-on-error: ${{ github.event.inputs.test_mode == 'true' }}
+        run: |
+          if [[ "${{ github.event.inputs.test_mode }}" == "true" ]]; then
+            echo "Running in TEST MODE with error simulation: ${{ github.event.inputs.error_simulation }}"
+            # Prepare script environment variables for test mode
+            if [[ "${{ github.event.inputs.error_simulation }}" == "none" ]]; then
+              python -c "import os; open('test_config.py', 'w').write('TEST_MODE = True\nERROR_SIMULATION = None')"
+            else
+              python -c "import os; open('test_config.py', 'w').write('TEST_MODE = True\nERROR_SIMULATION = \"${{ github.event.inputs.error_simulation }}\"')"
+            fi
+            # Run with test configuration
+            python -c "import update_sa_holidays as script; from test_config import TEST_MODE, ERROR_SIMULATION; script.TEST_MODE = TEST_MODE; script.ERROR_SIMULATION = ERROR_SIMULATION; script.main()"
+          else
+            # Run normally
+            python update_sa_holidays.py
+          fi
       
       - name: Commit and push if changed
+        if: ${{ github.event.inputs.test_mode != 'true' || github.event.inputs.error_simulation == 'none' }}
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'

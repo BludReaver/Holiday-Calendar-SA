@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 
 # Configuration settings
 TEST_MODE = False  # Set to True to test error notifications
-ERROR_SIMULATION = None  # Can be set to: "public_holidays", "school_terms", "both", "connection", "404", "permission", "no_terms", or None
+ERROR_SIMULATION = None  # Can be set to: "public_holidays", "school_terms", "future_term", "both", "connection", "404", "permission", "no_terms", or None
 ICS_URL = "https://www.officeholidays.com/ics-all/australia/south-australia"  # Public holidays URL
 SCHOOL_TERMS_URL = "https://www.education.sa.gov.au/docs/sper/communications/term-calendar/ical-School-term-dates-calendar-2025.ics"  # School terms URL
 FUTURE_TERMS_URL = "https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools"  # Future term dates URL
@@ -55,7 +55,7 @@ def send_failure_notification(error_excerpt: str, failed_calendar=None):
     
     Parameters:
         error_excerpt: The error message to include
-        failed_calendar: Optional identifier of which calendar failed (public_holidays, school_terms, or None for general failure)
+        failed_calendar: Optional identifier of which calendar failed (public_holidays, school_terms, future_term, or None for general failure)
     """
     # Get Pushover credentials from environment variables
     token = os.environ.get("PUSHOVER_API_TOKEN")  # Updated from APP_TOKEN to API_TOKEN
@@ -77,9 +77,12 @@ def send_failure_notification(error_excerpt: str, failed_calendar=None):
     elif failed_calendar == "school_terms":
         calendar_info = "📅 School Terms Calendar update failed\n\n"
         calendar_source = f"🔗 Calendar Source: {SCHOOL_TERMS_SOURCE_URL}\n\n"
+    elif failed_calendar == "future_term":
+        calendar_info = "📅 Future Term 1 Start Date update failed\n\n"
+        calendar_source = f"🔗 Calendar Source: {FUTURE_TERMS_URL}\n\n"
     else:
         calendar_info = "📅 Calendar update failed\n\n"
-        calendar_source = f"🔗 Calendar Sources:\n- Public Holidays: {PUBLIC_HOLIDAYS_SOURCE_URL}\n- School Terms: {SCHOOL_TERMS_SOURCE_URL}\n\n"
+        calendar_source = f"🔗 Calendar Sources:\n- Public Holidays: {PUBLIC_HOLIDAYS_SOURCE_URL}\n- School Terms: {SCHOOL_TERMS_SOURCE_URL}\n- Future Terms: {FUTURE_TERMS_URL}\n\n"
         
     import httpx
     message = (
@@ -106,7 +109,13 @@ def send_failure_notification(error_excerpt: str, failed_calendar=None):
     else:
         print(f"❌ Failed to send notification: {response.text}")
 
-def send_success_notification():
+def send_success_notification(future_term_fetched=True):
+    """
+    Send a success notification with information about the update
+    
+    Parameters:
+        future_term_fetched: Boolean indicating if future term dates were successfully fetched
+    """
     # Get Pushover credentials from environment variables
     token = os.environ.get("PUSHOVER_API_TOKEN")  # Updated from APP_TOKEN to API_TOKEN
     user = os.environ.get("PUSHOVER_USER_KEY")
@@ -118,6 +127,10 @@ def send_success_notification():
         
     import httpx
     next_update = get_next_update_date()
+    
+    future_term_message = ""
+    if not future_term_fetched:
+        future_term_message = "⚠️ Note: Future Term 1 dates could not be fetched but the current term dates are available.\n\n"
 
     message = (
         "✅ SA Calendars Updated ✅\n\n"
@@ -125,6 +138,7 @@ def send_success_notification():
         "📅 Updated calendars:\n"
         "- SA Public Holidays\n"
         "- SA School Terms & Holidays\n\n"
+        f"{future_term_message}"
         f"🕒 Next update: {next_update}\n\n"
         "🌞 Have a nice day! 🌞"
     )
@@ -344,6 +358,8 @@ def get_future_term1_date() -> Optional[Dict[str, datetime]]:
     """
     print(f"🔮 Checking for future Term 1 start date from {FUTURE_TERMS_URL}...")
     
+    # We've moved the simulation check to the update_school_terms function
+    
     try:
         response = requests.get(FUTURE_TERMS_URL)
         response.raise_for_status()
@@ -436,6 +452,9 @@ def update_school_terms():
     """Update the school terms and holidays calendar"""
     print(f"📅 Downloading school terms from {SCHOOL_TERMS_URL}...")
     
+    # Track if future term dates were successfully fetched
+    future_term_success = True
+    
     # Simulate errors if in test mode
     if TEST_MODE and ERROR_SIMULATION:
         if ERROR_SIMULATION in ["school_terms", "both", "connection"]:
@@ -459,7 +478,7 @@ def update_school_terms():
             if not terms:
                 raise Exception("No school terms found in the calendar")
             
-            return
+            return future_term_success
     
     response = requests.get(SCHOOL_TERMS_URL)
     response.raise_for_status()
@@ -473,21 +492,35 @@ def update_school_terms():
     
     print(f"Found {len(terms)} school terms")
     
-    # Try to get the future Term 1 start date
-    future_term1 = get_future_term1_date()
-    
-    # If we found a future Term 1 date, add to terms if it's not already there
-    if future_term1:
-        # Check if this term already exists in our list
-        future_term_exists = any(
-            term["start"].year == future_term1["start"].year and 
-            term["summary"].strip().endswith("1")
-            for term in terms
-        )
-        
-        if not future_term_exists:
-            print(f"➕ Adding future Term 1 (starting {future_term1['start'].strftime('%B %d, %Y')}) to the calendar")
-            terms.append(future_term1)
+    # Check for test mode error simulation for future term dates before trying to fetch them
+    if TEST_MODE and ERROR_SIMULATION == "future_term":
+        print("⚠️ Simulating failure to fetch future term dates")
+        future_term_success = False
+        print("⚠️ Continuing with existing term dates only")
+    else:
+        # Try to get the future Term 1 start date
+        try:
+            future_term1 = get_future_term1_date()
+            
+            # If we found a future Term 1 date, add to terms if it's not already there
+            if future_term1:
+                # Check if this term already exists in our list
+                future_term_exists = any(
+                    term["start"].year == future_term1["start"].year and 
+                    term["summary"].strip().endswith("1")
+                    for term in terms
+                )
+                
+                if not future_term_exists:
+                    print(f"➕ Adding future Term 1 (starting {future_term1['start'].strftime('%B %d, %Y')}) to the calendar")
+                    terms.append(future_term1)
+            else:
+                future_term_success = False
+                print("⚠️ No future Term 1 date could be found. Continuing with existing term dates only.")
+        except Exception as e:
+            future_term_success = False
+            print(f"⚠️ Failed to add future Term 1 date: {e}")
+            print("⚠️ Continuing with existing term dates only")
     
     # Sort terms by start date to ensure proper order
     terms = sorted(terms, key=lambda x: x["start"])
@@ -542,6 +575,8 @@ def update_school_terms():
         f.write(calendar_content)
     
     print("✅ School terms and holidays calendar updated successfully!")
+    
+    return future_term_success
 
 def update_public_holidays():
     """Update the public holidays calendar"""
@@ -598,6 +633,7 @@ def main():
         # Track which parts succeeded
         public_holidays_success = False
         school_terms_success = False
+        future_term_success = True  # Assume true initially, set to false on specific failure
         
         try:
             # Update public holidays calendar
@@ -629,8 +665,13 @@ def main():
             
         try:
             # Update school terms and holidays calendar
-            update_school_terms()
+            future_term_success = update_school_terms()
             school_terms_success = True
+            
+            # Log a warning if future term dates couldn't be fetched
+            if not future_term_success and TEST_MODE and ERROR_SIMULATION == "future_term":
+                print("⚠️ Future term dates couldn't be fetched, but the calendar was updated with available term dates")
+                # This is just a warning, not a fatal error
         except requests.exceptions.ConnectionError as e:
             error_message = str(e)
             print(f"❌ Connection error updating school terms calendar: {error_message}")
@@ -654,13 +695,16 @@ def main():
             print(f"❌ Error updating school terms calendar: {error_message}")
             if "No school terms found" in error_message:
                 user_friendly_error = "No school terms were found in the calendar. The website might have changed how they organize their data."
+                send_failure_notification(user_friendly_error, "school_terms")
             else:
                 user_friendly_error = f"An error occurred updating the school terms calendar: {error_message}"
-            send_failure_notification(user_friendly_error, "school_terms")
+                send_failure_notification(user_friendly_error, "school_terms")
         
         # Only send success notification if both calendars updated successfully
         if public_holidays_success and school_terms_success:
-            send_success_notification()
+            send_success_notification(future_term_success)
+            if not future_term_success:
+                print("⚠️ Note: Future term dates couldn't be fetched, but the calendar was updated with available term dates")
         else:
             print("⚠️ One or more calendars failed to update, skipping success notification")
             
