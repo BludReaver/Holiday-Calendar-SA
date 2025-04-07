@@ -248,13 +248,12 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
     for term in terms:
         term_start_date = format_ics_datetime(term['start'])
         term_end_next_day = format_ics_datetime(term['start'] + timedelta(days=1))
-        uid = str(uuid.uuid4())
         term_number = term['summary'].strip().split(" ")[-1]
         
         term_lines = [
             "BEGIN:VEVENT",
             "CLASS:PUBLIC",
-            f"UID:{term_start_date}-TERM{term_number}-START@sa-school-terms.education.sa.gov.au",
+            f"UID:START-{term_start_date}-TERM{term_number}@sa-school-terms.education.sa.gov.au",
             f"CREATED:{timestamp}",
             f"DESCRIPTION:First day of Term {term_number} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
             "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
@@ -283,13 +282,12 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
     for term in terms:
         term_end_date = format_ics_datetime(term['end'])
         term_end_next_day = format_ics_datetime(term['end'] + timedelta(days=1))
-        uid = str(uuid.uuid4())
         term_number = term['summary'].strip().split(" ")[-1]
         
         term_lines = [
             "BEGIN:VEVENT",
             "CLASS:PUBLIC",
-            f"UID:{term_end_date}-TERM{term_number}-END@sa-school-terms.education.sa.gov.au",
+            f"UID:END-{term_end_date}-TERM{term_number}@sa-school-terms.education.sa.gov.au",
             f"CREATED:{timestamp}",
             f"DESCRIPTION:Last day of Term {term_number} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
             "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
@@ -323,7 +321,7 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
         holiday_lines = [
             "BEGIN:VEVENT",
             "CLASS:PUBLIC",
-            f"UID:{holiday_start_date}-HOLIDAY-TERM{term_number}@sa-school-terms.education.sa.gov.au",
+            f"UID:HOLIDAY-{holiday_start_date}-TERM{term_number}@sa-school-terms.education.sa.gov.au",
             f"CREATED:{timestamp}",
             f"DESCRIPTION:School holidays after Term {term_number} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
             "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
