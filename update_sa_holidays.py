@@ -12,11 +12,11 @@ def clean_event_name(summary: str) -> str:
 
 def send_failure_notification(error_excerpt: str):
     # Get Pushover credentials from environment variables
-    token = os.environ.get("PUSHOVER_APP_TOKEN")
+    token = os.environ.get("PUSHOVER_API_TOKEN")
     user = os.environ.get("PUSHOVER_USER_KEY")
     
     # Skip notification if credentials are missing
-    if not token or not user or token == "YOUR_PUSHOVER_APP_TOKEN" or user == "YOUR_PUSHOVER_USER_KEY":
+    if not token or not user or token == "YOUR_PUSHOVER_API_TOKEN" or user == "YOUR_PUSHOVER_USER_KEY":
         print("⚠️ Pushover credentials not configured. Skipping failure notification.")
         print(f"Error: {error_excerpt}")
         return
@@ -47,11 +47,11 @@ def send_failure_notification(error_excerpt: str):
 
 def send_success_notification():
     # Get Pushover credentials from environment variables
-    token = os.environ.get("PUSHOVER_APP_TOKEN")
+    token = os.environ.get("PUSHOVER_API_TOKEN")
     user = os.environ.get("PUSHOVER_USER_KEY")
     
     # Skip notification if credentials are missing
-    if not token or not user or token == "YOUR_PUSHOVER_APP_TOKEN" or user == "YOUR_PUSHOVER_USER_KEY":
+    if not token or not user or token == "YOUR_PUSHOVER_API_TOKEN" or user == "YOUR_PUSHOVER_USER_KEY":
         print("⚠️ Pushover credentials not configured. Skipping success notification.")
         return
         
@@ -118,3 +118,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
