@@ -1,4 +1,4 @@
-name: Update SA Public Holidays
+name: Update SA Holidays Calendars
 
 on:
   schedule:
@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  update-calendar:
+  update-calendars:
     runs-on: ubuntu-latest
 
     steps:
@@ -39,5 +39,5 @@ jobs:
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
-          git add SA-Public-Holidays.ics
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update SA public holidays calendar - quarterly update" && git push) 
+          git add SA-Public-Holidays.ics SA-School-Terms-Holidays.ics
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update SA holidays calendars - quarterly update" && git push) 
