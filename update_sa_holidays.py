@@ -90,7 +90,7 @@ def send_success_notification():
     message = (
         "✅ SA Public Holidays Updated ✅\n\n"
         "SA Public Holiday calendar was successfully updated via GitHub!\n\n"
-        f"🕒 Next auto-update:\n{next_update}\n\n"
+        f"🕒 Next update:{next_update}\n\n"
         "🌞 Have a nice day! 🌞"
     )
 
