@@ -211,58 +211,123 @@ def format_ics_datetime(dt: datetime) -> str:
     return dt.strftime("%Y%m%d")
 
 def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Dict[str, datetime]]) -> str:
-    """Generate a complete ICS calendar with terms and holidays"""
+    """Generate a complete ICS calendar with terms and holidays that matches the public holidays format exactly"""
+    current_year = datetime.now().year
+    timestamp = datetime.now().strftime('%Y%m%dT%H%M%SZ')
+    
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//SA School Terms and Holidays//EN",
-        "X-WR-CALNAME:SA School Terms and Holidays",
+        "PRODID:-//South Australia School Terms and Holidays//EN",
+        "X-WR-CALNAME:South Australia School Terms and Holidays",
         "X-WR-CALDESC:School terms and holiday periods in South Australia",
-        "CALSCALE:GREGORIAN"
+        "REFRESH-INTERVAL;VALUE=DURATION:PT48H",
+        "X-PUBLISHED-TTL:PT48H",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-MS-OLK-FORCEINSPECTOROPEN:TRUE"
     ]
     
     # Add term START dates
     for term in terms:
+        term_start_date = format_ics_datetime(term['start'])
+        term_end_next_day = format_ics_datetime(term['start'] + timedelta(days=1))
+        uid = str(uuid.uuid4())
+        term_number = term['summary'].strip().split(" ")[-1]
+        
         term_lines = [
             "BEGIN:VEVENT",
-            f"SUMMARY:{term['summary']} Start",
-            f"DTSTART;VALUE=DATE:{format_ics_datetime(term['start'])}",
-            f"DTEND;VALUE=DATE:{format_ics_datetime(term['start'] + timedelta(days=1))}",
-            f"UID:{str(uuid.uuid4())}",
-            "SEQUENCE:0",
-            f"DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}",
+            "CLASS:PUBLIC",
+            f"UID:{term_start_date}-TERM{term_number}-START@sa-school-terms.education.sa.gov.au",
+            f"CREATED:{timestamp}",
+            f"DESCRIPTION:First day of Term {term_number} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
+            "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
+            f"DTSTART;VALUE=DATE:{term_start_date}",
+            f"DTEND;VALUE=DATE:{term_end_next_day}",
+            f"DTSTAMP:{timestamp}",
+            "LOCATION:South Australia",
+            "PRIORITY:5",
+            f"LAST-MODIFIED:{timestamp}",
+            "SEQUENCE:1",
+            f"SUMMARY;LANGUAGE=en-us:Term {term_number} Start",
             "TRANSP:OPAQUE",
+            "X-MICROSOFT-CDO-BUSYSTATUS:BUSY",
+            "X-MICROSOFT-CDO-IMPORTANCE:1",
+            "X-MICROSOFT-DISALLOW-COUNTER:FALSE",
+            "X-MS-OLK-ALLOWEXTERNCHECK:TRUE",
+            "X-MS-OLK-AUTOFILLLOCATION:FALSE",
+            "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
+            "X-MICROSOFT-MSNCALENDAR-ALLDAYEVENT:TRUE",
+            "X-MS-OLK-CONFTYPE:0",
             "END:VEVENT"
         ]
         lines.extend(term_lines)
     
     # Add term END dates
     for term in terms:
+        term_end_date = format_ics_datetime(term['end'])
+        term_end_next_day = format_ics_datetime(term['end'] + timedelta(days=1))
+        uid = str(uuid.uuid4())
+        term_number = term['summary'].strip().split(" ")[-1]
+        
         term_lines = [
             "BEGIN:VEVENT",
-            f"SUMMARY:{term['summary']} End",
-            f"DTSTART;VALUE=DATE:{format_ics_datetime(term['end'])}",
-            f"DTEND;VALUE=DATE:{format_ics_datetime(term['end'] + timedelta(days=1))}",
-            f"UID:{str(uuid.uuid4())}",
-            "SEQUENCE:0",
-            f"DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}",
+            "CLASS:PUBLIC",
+            f"UID:{term_end_date}-TERM{term_number}-END@sa-school-terms.education.sa.gov.au",
+            f"CREATED:{timestamp}",
+            f"DESCRIPTION:Last day of Term {term_number} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
+            "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
+            f"DTSTART;VALUE=DATE:{term_end_date}",
+            f"DTEND;VALUE=DATE:{term_end_next_day}",
+            f"DTSTAMP:{timestamp}",
+            "LOCATION:South Australia",
+            "PRIORITY:5",
+            f"LAST-MODIFIED:{timestamp}",
+            "SEQUENCE:1",
+            f"SUMMARY;LANGUAGE=en-us:Term {term_number} End",
             "TRANSP:OPAQUE",
+            "X-MICROSOFT-CDO-BUSYSTATUS:BUSY",
+            "X-MICROSOFT-CDO-IMPORTANCE:1",
+            "X-MICROSOFT-DISALLOW-COUNTER:FALSE",
+            "X-MS-OLK-ALLOWEXTERNCHECK:TRUE",
+            "X-MS-OLK-AUTOFILLLOCATION:FALSE",
+            "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
+            "X-MICROSOFT-MSNCALENDAR-ALLDAYEVENT:TRUE",
+            "X-MS-OLK-CONFTYPE:0",
             "END:VEVENT"
         ]
         lines.extend(term_lines)
     
     # Add holiday events
     for holiday in holidays:
+        holiday_start_date = format_ics_datetime(holiday['start'])
+        holiday_end_date = format_ics_datetime(holiday['end'] + timedelta(days=1))
+        term_number = holiday['summary'].strip().split(" ")[-1].replace(")", "")
+        
         holiday_lines = [
             "BEGIN:VEVENT",
-            f"SUMMARY:{holiday['summary']}",
-            f"DTSTART;VALUE=DATE:{format_ics_datetime(holiday['start'])}",
-            # ICS dates are exclusive for DTEND, so add 1 day
-            f"DTEND;VALUE=DATE:{format_ics_datetime(holiday['end'] + timedelta(days=1))}",
-            f"UID:{str(uuid.uuid4())}",
-            "SEQUENCE:0",
-            f"DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}",
+            "CLASS:PUBLIC",
+            f"UID:{holiday_start_date}-HOLIDAY-TERM{term_number}@sa-school-terms.education.sa.gov.au",
+            f"CREATED:{timestamp}",
+            f"DESCRIPTION:School holidays after Term {term_number} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
+            "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
+            f"DTSTART;VALUE=DATE:{holiday_start_date}",
+            f"DTEND;VALUE=DATE:{holiday_end_date}",
+            f"DTSTAMP:{timestamp}",
+            "LOCATION:South Australia",
+            "PRIORITY:5",
+            f"LAST-MODIFIED:{timestamp}",
+            "SEQUENCE:1",
+            f"SUMMARY;LANGUAGE=en-us:{holiday['summary']}",
             "TRANSP:OPAQUE",
+            "X-MICROSOFT-CDO-BUSYSTATUS:BUSY",
+            "X-MICROSOFT-CDO-IMPORTANCE:1",
+            "X-MICROSOFT-DISALLOW-COUNTER:FALSE",
+            "X-MS-OLK-ALLOWEXTERNCHECK:TRUE",
+            "X-MS-OLK-AUTOFILLLOCATION:FALSE",
+            "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
+            "X-MICROSOFT-MSNCALENDAR-ALLDAYEVENT:TRUE",
+            "X-MS-OLK-CONFTYPE:0",
             "END:VEVENT"
         ]
         lines.extend(holiday_lines)
