@@ -57,7 +57,7 @@ def send_failure_notification(error_excerpt: str):
         "1. Go to your GitHub repository.\n"
         "2. Click the Actions tab.\n"
         "3. Open the failed workflow.\n"
-        "4. Check which step failed.\n\n"
+        "4. Check which step failed.\n"
         "5. Ensure the following links are valid:\n\n"
         f"🌐 Main site: {URL}\n"
         f"📅 Calendar source: {URL}\n\n"
