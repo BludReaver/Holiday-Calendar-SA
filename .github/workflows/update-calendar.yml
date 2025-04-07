@@ -27,7 +27,14 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install requests httpx
+        run: pip install -r requirements.txt
+
+      - name: Create .nojekyll file if it doesn't exist
+        run: |
+          if [ ! -f .nojekyll ]; then
+            touch .nojekyll
+            echo "Created .nojekyll file"
+          fi
 
       - name: Run update script
         run: python update_sa_holidays.py
@@ -39,5 +46,10 @@ jobs:
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
-          git add SA-Public-Holidays.ics SA-School-Terms-Holidays.ics
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update SA holidays calendars - quarterly update" && git push) 
+          git add SA-Public-Holidays.ics SA-School-Terms-Holidays.ics .nojekyll
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update SA holidays calendars - quarterly update"
+            git push
+          fi

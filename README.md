@@ -8,6 +8,8 @@ A clean, automatically updating calendar of South Australian public holidays and
 - Removes text in parentheses (like "Regional Holiday" or "Not a Public Holiday") for cleaner display
 - Maintains the original format and technical specifications for Google Calendar compatibility
 - Includes school terms and holiday periods from [education.sa.gov.au](https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools)
+- Standardized format across both calendars for consistent display in calendar apps
+- Robust error handling with user-friendly notifications
 - Updates quarterly via GitHub Actions
 - Sends notifications on success/failure (optional via Pushover)
 
@@ -66,7 +68,7 @@ When it runs:
 2. Cleans up the event names by removing text in parentheses
 3. Downloads the latest school terms from education.sa.gov.au
 4. Generates school holiday periods between terms
-5. Creates ICS calendar files with consistent formatting
+5. Creates ICS calendar files with consistent formatting for maximum compatibility
 6. Commits the changes back to the repository
 
 ## Technical Details
@@ -75,8 +77,19 @@ This calendar is maintained by a Python script that:
 1. Downloads the iCalendar files from official sources
 2. Uses regular expressions to clean the event summaries
 3. Preserves all original formatting, language attributes, and other properties
-4. Ensures consistent formatting between calendars for maximum compatibility
-5. Updates the calendar files in this repository
+4. Ensures consistent formatting between calendars for maximum compatibility with Google Calendar and other applications
+5. Handles errors intelligently with specific error messages for different failure modes
+6. Processes each calendar independently, allowing partial success even if one calendar source fails
+7. Provides detailed notifications to help troubleshoot any issues
+
+## Error Handling Features
+
+The script includes robust error handling for various scenarios:
+- Connection issues to source websites
+- 404 errors if calendar files are moved or renamed
+- Permission errors when saving files
+- Missing or empty school terms data
+- General exceptions with user-friendly messages
 
 ## Setting Up Your Own Version
 
@@ -95,12 +108,26 @@ This calendar is maintained by a Python script that:
 To run this script locally:
 
 ```bash
-# Install dependencies
-pip install requests httpx
+# Install dependencies from requirements.txt
+pip install -r requirements.txt
 
 # Run the script
 python update_sa_holidays.py
+
+# Run tests with simulated errors (optional)
+python -c "import update_sa_holidays; update_sa_holidays.TEST_MODE=True; update_sa_holidays.ERROR_SIMULATION='404'; update_sa_holidays.main()"
 ```
+
+### Available Error Simulations
+
+For testing, you can set `TEST_MODE` to `True` and `ERROR_SIMULATION` to one of:
+- `"public_holidays"` - Simulate failure downloading public holidays
+- `"school_terms"` - Simulate failure downloading school terms
+- `"both"` - Simulate failure downloading both calendars
+- `"connection"` - Simulate connection issues
+- `"404"` - Simulate 404 errors
+- `"permission"` - Simulate permission errors
+- `"no_terms"` - Simulate missing school terms data
 
 ## License
 
