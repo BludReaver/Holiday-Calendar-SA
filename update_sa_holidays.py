@@ -4,7 +4,7 @@ import os
 from datetime import datetime, timedelta
 
 # Configuration settings
-TEST_MODE = False  # Set to True to test error notifications
+TEST_MODE = True  # Set to True to test error notifications
 ICS_URL = "https://www.officeholidays.com/ics-all/australia/south-australia"  # Restored original URL
 OUTPUT_FILE = "SA-Public-Holidays.ics"  # Updated filename to match new repository
 URL = ICS_URL  # Used in notifications
