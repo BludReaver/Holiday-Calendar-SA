@@ -1,0 +1,3 @@
+Initial setup: 2025-04-07
+Calendar created with clean event names
+Automated quarterly updates enabled 
