@@ -250,6 +250,11 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
         term_end_next_day = format_ics_datetime(term['start'] + timedelta(days=1))
         term_number = term['summary'].strip().split(" ")[-1]
         
+        # For Term 1 2026, make the summary more distinct to avoid Google Calendar display issues
+        summary = f"Term {term_number} Start"
+        if term['start'].year == 2026 and term_number == "1":
+            summary = f"Term {term_number} Start (January 27, 2026)"
+        
         term_lines = [
             "BEGIN:VEVENT",
             "CLASS:PUBLIC",
@@ -264,7 +269,7 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
             "PRIORITY:5",
             f"LAST-MODIFIED:{timestamp}",
             "SEQUENCE:1",
-            f"SUMMARY;LANGUAGE=en-us:Term {term_number} Start",
+            f"SUMMARY;LANGUAGE=en-us:{summary}",
             "TRANSP:OPAQUE",
             "X-MICROSOFT-CDO-BUSYSTATUS:BUSY",
             "X-MICROSOFT-CDO-IMPORTANCE:1",
@@ -284,32 +289,72 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
         term_end_next_day = format_ics_datetime(term['end'] + timedelta(days=1))
         term_number = term['summary'].strip().split(" ")[-1]
         
-        term_lines = [
-            "BEGIN:VEVENT",
-            "CLASS:PUBLIC",
-            f"UID:END-{term_end_date}-TERM{term_number}@sa-school-terms.education.sa.gov.au",
-            f"CREATED:{timestamp}",
-            f"DESCRIPTION:Last day of Term {term_number} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
-            "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
-            f"DTSTART;VALUE=DATE:{term_end_date}",
-            f"DTEND;VALUE=DATE:{term_end_next_day}",
-            f"DTSTAMP:{timestamp}",
-            "LOCATION:South Australia",
-            "PRIORITY:5",
-            f"LAST-MODIFIED:{timestamp}",
-            "SEQUENCE:1",
-            f"SUMMARY;LANGUAGE=en-us:Term {term_number} End",
-            "TRANSP:OPAQUE",
-            "X-MICROSOFT-CDO-BUSYSTATUS:BUSY",
-            "X-MICROSOFT-CDO-IMPORTANCE:1",
-            "X-MICROSOFT-DISALLOW-COUNTER:FALSE",
-            "X-MS-OLK-ALLOWEXTERNCHECK:TRUE",
-            "X-MS-OLK-AUTOFILLLOCATION:FALSE",
-            "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
-            "X-MICROSOFT-MSNCALENDAR-ALLDAYEVENT:TRUE",
-            "X-MS-OLK-CONFTYPE:0",
-            "END:VEVENT"
-        ]
+        # For Term 1 2026, make the summary more distinct to avoid Google Calendar display issues
+        summary = f"Term {term_number} End"
+        
+        # If this is the 2026 Term 1 End, create a special enhanced event to avoid display issues
+        if term['end'].year == 2026 and term_number == "1":
+            # Create a special event for the 2026 Term 1 End that's properly distinct
+            term_lines = [
+                "BEGIN:VEVENT",
+                "CLASS:PUBLIC",
+                # Add a completely different UID structure
+                f"UID:TERM1-2026-END-DISTINCT-{uuid.uuid4()}@sa-school-terms.education.sa.gov.au",
+                f"CREATED:{timestamp}",
+                # Enhanced description
+                f"DESCRIPTION:Last day of Term 1, 2026 for South Australian schools.\\n\\nThis event marks the end of the first term on April 10, 2026.\\n\\nInformation provided by education.sa.gov.au",
+                "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
+                f"DTSTART;VALUE=DATE:{term_end_date}",
+                f"DTEND;VALUE=DATE:{term_end_next_day}",
+                # Different timestamp - add 1 second
+                f"DTSTAMP:{timestamp.replace('Z', '1Z')}",
+                "LOCATION:South Australia Schools",
+                "PRIORITY:5",
+                # Different last-modified timestamp
+                f"LAST-MODIFIED:{timestamp.replace('Z', '2Z')}",
+                "SEQUENCE:2",  # Different sequence number
+                # Very distinct summary
+                f"SUMMARY;LANGUAGE=en-us:Term 1 End - April 10th, 2026",
+                "TRANSP:OPAQUE",
+                "X-MICROSOFT-CDO-BUSYSTATUS:BUSY",
+                "X-MICROSOFT-CDO-IMPORTANCE:1",
+                "X-MICROSOFT-DISALLOW-COUNTER:FALSE",
+                "X-MS-OLK-ALLOWEXTERNCHECK:TRUE",
+                "X-MS-OLK-AUTOFILLLOCATION:FALSE",
+                "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
+                "X-MICROSOFT-MSNCALENDAR-ALLDAYEVENT:TRUE",
+                "X-MS-OLK-CONFTYPE:0",
+                "END:VEVENT"
+            ]
+        else:
+            # Regular term end event for all other terms
+            term_lines = [
+                "BEGIN:VEVENT",
+                "CLASS:PUBLIC",
+                f"UID:END-{term_end_date}-TERM{term_number}@sa-school-terms.education.sa.gov.au",
+                f"CREATED:{timestamp}",
+                f"DESCRIPTION:Last day of Term {term_number} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
+                "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
+                f"DTSTART;VALUE=DATE:{term_end_date}",
+                f"DTEND;VALUE=DATE:{term_end_next_day}",
+                f"DTSTAMP:{timestamp}",
+                "LOCATION:South Australia",
+                "PRIORITY:5",
+                f"LAST-MODIFIED:{timestamp}",
+                "SEQUENCE:1",
+                f"SUMMARY;LANGUAGE=en-us:{summary}",
+                "TRANSP:OPAQUE",
+                "X-MICROSOFT-CDO-BUSYSTATUS:BUSY",
+                "X-MICROSOFT-CDO-IMPORTANCE:1",
+                "X-MICROSOFT-DISALLOW-COUNTER:FALSE",
+                "X-MS-OLK-ALLOWEXTERNCHECK:TRUE",
+                "X-MS-OLK-AUTOFILLLOCATION:FALSE",
+                "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
+                "X-MICROSOFT-MSNCALENDAR-ALLDAYEVENT:TRUE",
+                "X-MS-OLK-CONFTYPE:0",
+                "END:VEVENT"
+            ]
+        
         lines.extend(term_lines)
     
     # Add holiday events
