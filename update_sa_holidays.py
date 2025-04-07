@@ -1,10 +1,11 @@
 import re
 import requests
 import os
+import sys
 from datetime import datetime, timedelta
 
 # Configuration settings
-TEST_MODE = False  # Set to True to test error notifications
+TEST_MODE = True  # Set to True to test error notifications
 ICS_URL = "https://www.officeholidays.com/ics-all/australia/south-australia"  # Restored original URL
 OUTPUT_FILE = "SA-Public-Holidays.ics"  # Updated filename to match new repository
 URL = ICS_URL  # Used in notifications
@@ -163,8 +164,14 @@ def main():
             
         print(f"❌ Error updating calendar: {error_message}")
         send_failure_notification(user_friendly_error)
+        
+        # Exit with non-zero status code to make the GitHub Actions workflow fail
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
+
+
+
 
 
