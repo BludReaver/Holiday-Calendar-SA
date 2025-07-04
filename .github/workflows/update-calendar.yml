@@ -2,15 +2,10 @@ name: Update SA Holidays Calendars
 
 on:
   schedule:
-    # Run at 10:30 AM Adelaide time for each quarter
-    # January (ACDT: UTC+10:30) - 00:00 UTC
-    - cron: '30 0 1 1 *'
-    # April (First few days might be ACDT, rest is ACST: UTC+9:30) - using ACST
-    - cron: '30 1 1 4 *'
-    # July (ACST: UTC+9:30) - 01:00 UTC
-    - cron: '30 1 1 7 *'
-    # October (First few days might be ACST, rest is ACDT: UTC+10:30) - using ACST
-    - cron: '30 1 1 10 *'
+    # ACDT (UTC+10:30) — October to March = 12:00 PM ACDT
+    - cron: '30 1 1 10,11,12,1,2,3 *'
+    # ACST (UTC+9:30) — April to September = 12:00 PM ACST
+    - cron: '30 2 1 4,5,6,7,8,9 *'
   workflow_dispatch:
     inputs:
       test_mode:
@@ -67,19 +62,15 @@ jobs:
         run: |
           if [[ "${{ github.event.inputs.test_mode }}" == "true" ]]; then
             echo "Running in TEST MODE with error simulation: ${{ github.event.inputs.error_simulation }}"
-            # Prepare script environment variables for test mode
             if [[ "${{ github.event.inputs.error_simulation }}" == "none" ]]; then
               python -c "import os; open('test_config.py', 'w').write('TEST_MODE = True\nERROR_SIMULATION = None')"
             else
               python -c "import os; open('test_config.py', 'w').write('TEST_MODE = True\nERROR_SIMULATION = \"${{ github.event.inputs.error_simulation }}\"')"
             fi
-            # Run with test configuration
             python -c "import update_sa_holidays as script; from test_config import TEST_MODE, ERROR_SIMULATION; script.TEST_MODE = TEST_MODE; script.ERROR_SIMULATION = ERROR_SIMULATION; script.main()"
           else
-            # Run normally
             python update_sa_holidays.py
-          fi
-      
+
       - name: Commit and push if changed
         if: ${{ github.event.inputs.test_mode != 'true' || github.event.inputs.error_simulation == 'none' }}
         run: |
@@ -89,6 +80,5 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update SA holidays calendars - quarterly update"
+            git commit -m "Update SA holidays calendars - monthly update"
             git push
-          fi
