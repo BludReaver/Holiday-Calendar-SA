@@ -70,6 +70,7 @@ jobs:
             python -c "import update_sa_holidays as script; from test_config import TEST_MODE, ERROR_SIMULATION; script.TEST_MODE = TEST_MODE; script.ERROR_SIMULATION = ERROR_SIMULATION; script.main()"
           else
             python update_sa_holidays.py
+          fi
 
       - name: Commit and push if changed
         if: ${{ github.event.inputs.test_mode != 'true' || github.event.inputs.error_simulation == 'none' }}
