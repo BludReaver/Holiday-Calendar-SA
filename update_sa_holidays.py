@@ -10,10 +10,10 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from bs4 import BeautifulSoup
 
-# ensure stdout is utf-8 so emojis render
+# Ensure stdout is UTF-8 so emojis render in logs
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-# emoji fallbacks
+# Emojis (used in logs)
 EMOJI_CHECK        = "✅"
 EMOJI_WARNING      = "⚠️"
 EMOJI_ERROR        = "❌"
@@ -23,54 +23,48 @@ EMOJI_SEARCH       = "🔍"
 EMOJI_CRYSTAL_BALL = "🔮"
 EMOJI_SUN          = "🌞"
 EMOJI_PLUS         = "➕"
-EMOJI_PENCIL       = "📝"
 
 # ─── CONFIG ─────────────────────────────────────────────────────────────────────
-TEST_MODE            = False
-ERROR_SIMULATION     = None   # e.g. "public_holidays", "school_terms", "future_term", "connection", "404", etc.
+# Which year's terms to publish from official or fallback sources
+TERMS_YEAR = 2025
 
-# Public holidays (unchanged)
-ICS_URL              = "https://www.officeholidays.com/ics-all/australia/south-australia"
+# Public holidays source (unchanged)
+ICS_URL = "https://www.officeholidays.com/ics-all/australia/south-australia"
 
 # Official SA school terms ICS (may 403/404 from CI)
-SCHOOL_TERMS_URL     = "https://www.education.sa.gov.au/docs/sper/communications/term-calendar/ical-School-term-dates-calendar-2025.ics"
+SCHOOL_TERMS_URL = "https://www.education.sa.gov.au/docs/sper/communications/term-calendar/ical-School-term-dates-calendar-2025.ics"
 
-# Human page (usually also gated from CI)
-FUTURE_TERMS_URL     = "https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools"
+# Human page (usually gated from CI) — kept only for display links in generated ICS
+EDU_TERMS_PAGE = "https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools"
 
-OUTPUT_FILE          = "SA-Public-Holidays.ics"
-SCHOOL_OUTPUT_FILE   = "SA-School-Terms-Holidays.ics"
+# Fallback site we can reliably scrape (you asked for this)
+HWK_URL = "https://holidayswithkids.com.au/sa-school-holidays/"
 
+# Output filenames
+OUTPUT_FILE         = "SA-Public-Holidays.ics"
+SCHOOL_OUTPUT_FILE  = "SA-School-Terms-Holidays.ics"
+
+# Source links for notifications
 PUBLIC_HOLIDAYS_SOURCE_URL = "https://www.officeholidays.com/subscribe/australia/south-australia"
-SCHOOL_TERMS_SOURCE_URL    = "https://www.schoolholidayssa.com.au/sa-school-holiday-dates-2025/"
 
-# Browser-like headers (official endpoints sometimes require this)
+# Mild browser headers (safe & generic)
 BROWSER_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0",
     "Accept": "text/calendar, text/html;q=0.9, */*;q=0.8",
-    "Referer": FUTURE_TERMS_URL,
     "Connection": "keep-alive",
 }
 
-# ─── UTILITIES ────────────────────────────────────────────────────────────────────
+# ─── UTILITIES ───────────────────────────────────────────────────────────────────
 def clean_event_name(summary: str) -> str:
     return re.sub(r"\s*\([^)]*\)", "", summary).strip()
 
 def get_next_update_date() -> str:
     today = datetime.now()
-    if today.month == 12:
-        next_month = datetime(today.year + 1, 1, 1)
-    else:
-        next_month = datetime(today.year, today.month + 1, 1)
-
-    day = next_month.day  # always 1
-    if 4 <= day <= 20 or 24 <= day <= 30:
-        suffix = "th"
-    else:
-        suffix = {1:"st",2:"nd",3:"rd"}.get(day % 10, "th")
-
-    fmt = f"%A {day}{suffix} %B %Y"
-    return next_month.strftime(fmt)
+    next_month = datetime(today.year + (1 if today.month == 12 else 0),
+                          1 if today.month == 12 else today.month + 1, 1)
+    day = next_month.day  # 1
+    suffix = "th" if 4 <= day <= 20 or 24 <= day <= 30 else {1:"st",2:"nd",3:"rd"}.get(day % 10,"th")
+    return next_month.strftime(f"%A {day}{suffix} %B %Y")
 
 def send_failure_notification(error_excerpt: str, failed_calendar: Optional[str]=None):
     token = os.getenv("PUSHOVER_API_TOKEN")
@@ -81,21 +75,21 @@ def send_failure_notification(error_excerpt: str, failed_calendar: Optional[str]
         return
 
     if failed_calendar == "public_holidays":
-        cal_info   = f"{EMOJI_CALENDAR} Public Holidays update failed\n\n"
-        cal_source = f"🔗 Source: {PUBLIC_HOLIDAYS_SOURCE_URL}\n\n"
+        cal_info = f"{EMOJI_CALENDAR} Public Holidays update failed\n\n"
+        cal_src  = f"🔗 Source: {PUBLIC_HOLIDAYS_SOURCE_URL}\n\n"
     elif failed_calendar == "school_terms":
-        cal_info   = f"{EMOJI_CALENDAR} School Terms update failed\n\n"
-        cal_source = f"🔗 Source: https://www.education.sa.gov.au\n\n"
+        cal_info = f"{EMOJI_CALENDAR} School Terms update failed\n\n"
+        cal_src  = f"🔗 Sources: official ICS and {HWK_URL}\n\n"
     elif failed_calendar == "future_term":
-        cal_info   = f"{EMOJI_CALENDAR} Future Term-1 fetch failed\n\n"
-        cal_source = f"🔗 Source: {FUTURE_TERMS_URL}\n\n"
+        cal_info = f"{EMOJI_CALENDAR} Future Term-1 fetch failed\n\n"
+        cal_src  = f"🔗 Source: {HWK_URL}\n\n"
     else:
-        cal_info   = f"{EMOJI_CALENDAR} Calendar update failed\n\n"
-        cal_source = (
-            f"🔗 Sources:\n"
+        cal_info = f"{EMOJI_CALENDAR} Calendar update failed\n\n"
+        cal_src  = (
+            "🔗 Sources:\n"
             f"- Public Holidays: {PUBLIC_HOLIDAYS_SOURCE_URL}\n"
-            f"- School Terms:    https://www.education.sa.gov.au\n"
-            f"- Future Terms:    {FUTURE_TERMS_URL}\n\n"
+            f"- School Terms (ICS): {SCHOOL_TERMS_URL}\n"
+            f"- Fallback: {HWK_URL}\n\n"
         )
 
     message = (
@@ -105,18 +99,19 @@ def send_failure_notification(error_excerpt: str, failed_calendar: Optional[str]
         "1. Navigate to your repo\n"
         "2. Click **Actions**\n"
         "3. Open the failed run\n\n"
-        f"{cal_source}"
+        f"{cal_src}"
         f"📝 Error Log:\n{error_excerpt}"
     )
 
-    resp = httpx.post(
-        "https://api.pushover.net/1/messages.json",
-        data={"token":token, "user":user, "message":message}
-    )
-    if resp.status_code == 200:
-        print(f"{EMOJI_CHECK} Failure notification sent")
-    else:
-        print(f"{EMOJI_ERROR} Notification failed:", resp.text)
+    try:
+        resp = httpx.post("https://api.pushover.net/1/messages.json",
+                          data={"token":token, "user":user, "message":message})
+        if resp.status_code == 200:
+            print(f"{EMOJI_CHECK} Failure notification sent")
+        else:
+            print(f"{EMOJI_ERROR} Notification failed:", resp.text)
+    except Exception as e:
+        print(f"{EMOJI_ERROR} Notification error:", e)
 
 def send_success_notification(future_term_fetched: bool = True):
     token = os.getenv("PUSHOVER_API_TOKEN")
@@ -125,41 +120,35 @@ def send_success_notification(future_term_fetched: bool = True):
         print(f"{EMOJI_WARNING} Pushover creds missing—skipping success notification.")
         return
 
-    next_up = get_next_update_date()
-    note = ""
-    if not future_term_fetched:
-        note = f"{EMOJI_WARNING} Could not fetch future Term-1 dates.\n\n"
-
+    note = f"{EMOJI_WARNING} Could not fetch future Term-1 dates.\n\n" if not future_term_fetched else ""
     message = (
         f"{EMOJI_CHECK} SA Calendars Updated! {EMOJI_CHECK}\n\n"
         "✓ Public Holidays\n"
         "✓ School Terms & Holidays\n\n"
         f"{note}"
-        f"🕒 Next update: {next_up}\n\n"
+        f"🕒 Next update: {get_next_update_date()}\n\n"
         f"{EMOJI_SUN} Have a great day! {EMOJI_SUN}"
     )
 
-    resp = httpx.post(
-        "https://api.pushover.net/1/messages.json",
-        data={"token":token, "user":user, "message":message}
-    )
-    if resp.status_code == 200:
-        print(f"{EMOJI_CHECK} Success notification sent")
-    else:
-        print(f"{EMOJI_ERROR} Notification failed:", resp.text)
+    try:
+        resp = httpx.post("https://api.pushover.net/1/messages.json",
+                          data={"token":token, "user":user, "message":message})
+        if resp.status_code == 200:
+            print(f"{EMOJI_CHECK} Success notification sent")
+        else:
+            print(f"{EMOJI_ERROR} Notification failed:", resp.text)
+    except Exception as e:
+        print(f"{EMOJI_ERROR} Notification error:", e)
 
 def parse_ics_date(s: str) -> datetime:
     return datetime(int(s[0:4]), int(s[4:6]), int(s[6:8]))
 
 def extract_term_dates(cal_text: str) -> List[Dict[str, datetime]]:
     lines = cal_text.splitlines()
-    terms, current = [], {}
-    in_ev = False
-
+    terms, current, in_ev = [], {}, False
     for L in lines:
         if L == "BEGIN:VEVENT":
-            in_ev = True
-            current = {}
+            in_ev, current = True, {}
         elif L == "END:VEVENT" and in_ev:
             if {"start","end","summary"} <= set(current):
                 terms.append(current)
@@ -203,12 +192,14 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
         "CALSCALE:GREGORIAN","METHOD:PUBLISH","X-MS-OLK-FORCEINSPECTOROPEN:TRUE"
     ]
 
-    # Term starts & ends
     for term in terms:
-        num = term["summary"].split()[-1]
-        # START
+        num   = term["summary"].split()[-1]
         start = format_dt(term["start"])
+        end   = format_dt(term["end"])
         nextd = format_dt(term["start"] + timedelta(days=1))
+        nextde= format_dt(term["end"] + timedelta(days=1))
+
+        # Term start
         summ = f"Term {num} Start"
         if term["start"].year == 2026 and num == "1":
             summ = "Term 1 Start (January 27, 2026)"
@@ -216,56 +207,42 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
             "BEGIN:VEVENT","CLASS:PUBLIC",
             f"UID:START-{start}-TERM{num}@sa-school-terms.education.sa.gov.au",
             f"CREATED:{ts}",
-            f"DESCRIPTION:First day of Term {num} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
-            "URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools",
+            "DESCRIPTION:First day of term for South Australian schools.",
+            f"URL:{EDU_TERMS_PAGE}",
             f"DTSTART;VALUE=DATE:{start}","DTEND;VALUE=DATE:{nextd}","DTSTAMP:{ts}",
             "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
             f"SUMMARY;LANGUAGE=en-us:{summ}",
-            "TRANSP:OPAQUE","X-MICROSOFT-CDO-BUSYSTATUS:BUSY","X-MICROSOFT-CDO-IMPORTANCE:1",
-            "X-MICROSOFT-CDO-DISALLOW-COUNTER:FALSE","X-MS-OLK-ALLOWEXTERNCHECK:TRUE",
-            "X-MS-OLK-AUTOFILLLOCATION:FALSE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
-            "X-MICROSOFT-MSNCALENDAR-ALLDAYEVENT:TRUE","X-MICROSOFT-CDO-CONFTYPE:0","END:VEVENT"
+            "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
         ]
-        # END
-        end = format_dt(term["end"])
-        nextde = format_dt(term["end"] + timedelta(days=1))
-        summ_end = f"Term {num} End"
+
+        # Term end (with special-case you previously had)
         if term["end"].year == 2026 and num == "1":
             cal += [
                 "BEGIN:VEVENT","CLASS:PUBLIC",
                 f"UID:TERM1-2026-END-DISTINCT-{uuid.uuid4()}@sa-school-terms.education.sa.gov.au",
                 f"CREATED:{ts}",
-                "DESCRIPTION:Last day of Term 1, 2026 for South Australian schools.\\n\\n"
-                "This event marks the end of the first term on April 10, 2026.\\n\\n"
-                "Information provided by education.sa.gov.au",
-                "URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools",
-                f"DTSTART;VALUE=DATE:{end}","DTEND;VALUE=DATE:{nextde}",
-                f"DTSTAMP:{ts.replace('Z','1Z')}",
+                "DESCRIPTION:Last day of Term 1, 2026 for South Australian schools.",
+                f"URL:{EDU_TERMS_PAGE}",
+                f"DTSTART;VALUE=DATE:{end}","DTEND;VALUE=DATE:{nextde}","DTSTAMP:"+ts.replace("Z","1Z"),
                 "LOCATION:South Australia Schools","PRIORITY:5",
                 f"LAST-MODIFIED:{ts.replace('Z','2Z')}","SEQUENCE:2",
                 "SUMMARY;LANGUAGE=en-us:Term 1 End - April 10th, 2026",
-                "TRANSP:OPAQUE","X-MICROSOFT-CDO-BUSYSTATUS:BUSY","X-MICROSOFT-CDO-IMPORTANCE:1",
-                "X-MICROSOFT-CDO-DISALLOW-COUNTER:FALSE","X-MS-OLK-ALLOWEXTERNCHECK:TRUE",
-                "X-MS-OLK-AUTOFILLLOCATION:FALSE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
-                "X-MICROSOFT-MSNCALENDAR-ALLDAYEVENT:TRUE","X-MICROSOFT-CDO-CONFTYPE:0","END:VEVENT"
+                "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
             ]
         else:
             cal += [
                 "BEGIN:VEVENT","CLASS:PUBLIC",
                 f"UID:END-{end}-TERM{num}@sa-school-terms.education.sa.gov.au",
                 f"CREATED:{ts}",
-                f"DESCRIPTION:Last day of Term {num} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
-                "URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools",
+                "DESCRIPTION:Last day of term for South Australian schools.",
+                f"URL:{EDU_TERMS_PAGE}",
                 f"DTSTART;VALUE=DATE:{end}","DTEND;VALUE=DATE:{nextde}","DTSTAMP:{ts}",
                 "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
-                f"SUMMARY;LANGUAGE=en-us:{summ_end}",
-                "TRANSP:OPAQUE","X-MICROSOFT-CDO-BUSYSTATUS:BUSY","X-MICROSOFT-CDO-IMPORTANCE:1",
-                "X-MICROSOFT-CDO-DISALLOW-COUNTER:FALSE","X-MS-OLK-ALLOWEXTERNCHECK:TRUE",
-                "X-MS-OLK-AUTOFILLLOCATION:FALSE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
-                "X-MICROSOFT-MSNCALENDAR-ALLDAYEVENT:TRUE","X-MICROSOFT-CDO-CONFTYPE:0","END:VEVENT"
+                f"SUMMARY;LANGUAGE=en-us:Term {num} End",
+                "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
             ]
 
-    # Holidays
+    # Holidays between terms
     for hol in holidays:
         start = format_dt(hol["start"])
         end   = format_dt(hol["end"] + timedelta(days=1))
@@ -274,149 +251,109 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
             "BEGIN:VEVENT","CLASS:PUBLIC",
             f"UID:HOLIDAY-{start}-TERM{num}@sa-school-terms.education.sa.gov.au",
             f"CREATED:{ts}",
-            f"DESCRIPTION:School holidays after Term {num} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
-            "URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools",
+            "DESCRIPTION:School holiday period between terms.",
+            f"URL:{EDU_TERMS_PAGE}",
             f"DTSTART;VALUE=DATE:{start}","DTEND;VALUE=DATE:{end}","DTSTAMP:{ts}",
             "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
             f"SUMMARY;LANGUAGE=en-us:{hol['summary']}",
-            "TRANSP:OPAQUE","X-MICROSOFT-CDO-BUSYSTATUS:BUSY","X-MICROSOFT-CDO-IMPORTANCE:1",
-            "X-MICROSOFT-CDO-DISALLOW-COUNTER:FALSE","X-MS-OLK-ALLOWEXTERNCHECK:TRUE",
-            "X-MS-OLK-AUTOFILLLOCATION:FALSE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
-            "X-MICROSOFT-MSNCALENDAR-ALLDAYEVENT:TRUE","X-MICROSOFT-CDO-CONFTYPE:0","END:VEVENT"
+            "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
         ]
 
     cal.append("END:VCALENDAR")
     return "\n".join(cal)
 
-# ─── ALT SOURCE SCRAPING ─────────────────────────────────────────────────────────
-def _fetch_text(url: str, *, headers=None, timeout=30) -> Optional[str]:
+# ─── HOLIDAYSWITHKIDS SCRAPERS ──────────────────────────────────────────────────
+def _fetch_text(url: str) -> Optional[str]:
     try:
-        r = requests.get(url, headers=headers, timeout=timeout)
+        r = requests.get(url, headers=BROWSER_HEADERS, timeout=30)
         r.raise_for_status()
         return r.text
     except Exception as e:
         print(f"{EMOJI_WARNING} Fetch failed from {url}: {e}")
         return None
 
-def _parse_au_date(s: str) -> datetime:
+def _parse_au_date(s: str, year: int) -> datetime:
     s = s.strip()
-    s = re.sub(r"^[A-Za-z]+,?\s+", "", s)           # remove weekday if present
-    s = s.replace("–", "-")                        # normalize en-dash
-    s = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", s)     # remove ordinals
-    for fmt in ("%d %B %Y", "%d %b %Y"):
-        try:
-            return datetime.strptime(s, fmt)
-        except ValueError:
-            pass
-    raise ValueError(f"Unrecognized date: {s}")
+    s = re.sub(r"^[A-Za-z]+,?\s+", "", s)             # remove weekday if present
+    s = s.replace("–", "-")                           # normalize en-dash
+    s = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", s)       # remove ordinals
+    return datetime.strptime(f"{s} {year}", "%d %B %Y")
 
-def _extract_terms_from_text(text: str, year: int) -> List[Dict[str, datetime]]:
-    t = re.sub(r"\s+", " ", text.replace("\u2013", "-")).strip()
+def _extract_terms_from_hwk_year_section(h: BeautifulSoup, year: int) -> Optional[List[Dict[str, datetime]]]:
+    """
+    On HWK the main year sections list 'Term 1: 29 Jan to 13 Apr' etc.
+    We find the heading that contains the year and read the subsequent table or list.
+    """
+    # Find a heading that contains the year, then scan the next table/list text
+    target = None
+    for tag in h.find_all(["h2","h3","h4"]):
+        if str(year) in tag.get_text(" ", strip=True):
+            target = tag
+            break
+    if not target:
+        return None
+
+    # Grab a reasonable chunk of text after the heading
+    chunk = []
+    for sib in target.next_siblings:
+        if getattr(sib, "name", None) in {"h2","h3","h4"}:
+            break
+        chunk.append(getattr(sib, "get_text", lambda *a, **k: str(sib))(" ", strip=True))
+    text = " ".join(chunk)
+
     terms: List[Dict[str, datetime]] = []
     for n in range(1, 5):
-        patt = rf"Term\s*{n}\s*[:,\-]?\s*(?:[A-Za-z]+,?\s*)?(\d{{1,2}}\s+\w+\s+{year})\s*(?:-|to|–)\s*(?:[A-Za-z]+,?\s*)?(\d{{1,2}}\s+\w+\s+{year})"
-        m = re.search(patt, t, flags=re.I)
+        m = re.search(
+            rf"Term\s*{n}\s*[:\-]?\s*(\d{{1,2}}\s+\w+)\s*(?:to|–|-)\s*(\d{{1,2}}\s+\w+)",
+            text, flags=re.I
+        )
         if not m:
-            return []
-        start_dt = _parse_au_date(m.group(1))
-        end_dt   = _parse_au_date(m.group(2))
-        terms.append({"start": start_dt, "end": end_dt, "summary": f"Term {n}"})
+            return None
+        start = _parse_au_date(m.group(1), year)
+        end   = _parse_au_date(m.group(2), year)
+        terms.append({"start": start, "end": end, "summary": f"Term {n}"})
     return terms
 
-def _extract_term1_from_text(text: str, year: int) -> Optional[Dict[str, datetime]]:
-    t = re.sub(r"\s+", " ", text.replace("\u2013", "-")).strip()
-    patt = rf"Term\s*1\s*[:,\-]?\s*(?:[A-Za-z]+,?\s*)?(\d{{1,2}}\s+\w+\s+{year})\s*(?:-|to|–)\s*(?:[A-Za-z]+,?\s*)?(\d{{1,2}}\s+\w+\s+{year})"
-    m = re.search(patt, t, flags=re.I)
-    if not m:
+def _extract_future_term1_from_hwk(h: BeautifulSoup, year: int) -> Optional[Dict[str, datetime]]:
+    # Find “Future term dates” then table row for the year, Term 1 cell
+    heading = next((x for x in h.find_all(["h2","h3"]) if "future term dates" in x.get_text(" ", strip=True).lower()), None)
+    if not heading:
+        print(f"{EMOJI_WARNING} HWK: 'Future term dates' heading not found")
         return None
-    return {"start": _parse_au_date(m.group(1)),
-            "end":   _parse_au_date(m.group(2)),
-            "summary": "Term 1"}
+    table = heading.find_next("table")
+    if not table:
+        print(f"{EMOJI_WARNING} HWK: table not found after heading")
+        return None
 
-def scrape_terms_from_alt_sources(year: int = 2025) -> Optional[List[Dict[str, datetime]]]:
-    alt_urls = [
-        (f"https://www.schoolholidayssa.com.au/sa-school-holiday-dates-{year}/", "schoolholidayssa.com.au"),
-        (f"https://saschoolholidays.com.au/sa-school-holidays-{year}/", "saschoolholidays.com.au"),
-        (f"https://www.calendar-australia.com/school-calendars/south-australia/{year}/1/1/1/1/", "calendar-australia.com"),
-    ]
-    for url, label in alt_urls:
-        print(f"{EMOJI_SEARCH} Trying fallback source: {label}")
-        html = _fetch_text(url, headers=BROWSER_HEADERS)
-        if not html:
+    for tr in table.find_all("tr"):
+        cells = [c.get_text(" ", strip=True) for c in tr.find_all(["td","th"])]
+        if not cells:
             continue
-        text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
-        terms = _extract_terms_from_text(text, year)
-        if len(terms) == 4:
-            print(f"{EMOJI_CHECK} Parsed SA terms from {label}")
-            return terms
-        else:
-            print(f"{EMOJI_WARNING} Could not parse 4 terms from {label}")
-    return None
-
-def scrape_future_term1_from_alt_sources(year: int) -> Optional[Dict[str, datetime]]:
-    alt_urls = [
-        (f"https://www.schoolholidayssa.com.au/sa-school-holiday-dates-{year}/", "schoolholidayssa.com.au"),
-        (f"https://saschoolholidays.com.au/sa-school-holidays-{year}/", "saschoolholidays.com.au"),
-        (f"https://www.calendar-australia.com/school-calendars/south-australia/{year}/1/1/1/1/", "calendar-australia.com"),
-    ]
-    for url, label in alt_urls:
-        print(f"{EMOJI_SEARCH} Future-term fallback: {label}")
-        html = _fetch_text(url, headers=BROWSER_HEADERS)
-        if not html:
+        try:
+            row_year = int(re.sub(r"\D", "", cells[0]))
+        except Exception:
             continue
-        text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
-        t1 = _extract_term1_from_text(text, year)
-        if t1:
-            print(f"{EMOJI_CHECK} Parsed Term 1 {year} from {label}")
-            return t1
-        else:
-            print(f"{EMOJI_warning if False else EMOJI_WARNING} Could not parse Term 1 {year} from {label}")
-    return None
+        if row_year != year:
+            continue
+        if len(cells) < 2:
+            print(f"{EMOJI_WARNING} HWK: row has no Term 1 cell")
+            return None
+        term1 = cells[1]  # e.g., "27 January to 10 April"
+        parts = re.split(r"\bto\b|–|-", term1)
+        if len(parts) != 2:
+            print(f"{EMOJI_WARNING} HWK: unexpected Term 1 format: {term1}")
+            return None
+        start = _parse_au_date(parts[0].strip(), year)
+        end   = _parse_au_date(parts[1].strip(), year)
+        print(f"{EMOJI_CHECK} Parsed Term 1 {year} from holidayswithkids.com.au: {start.date()} → {end.date()}")
+        return {"start": start, "end": end, "summary": "Term 1"}
 
-# ─── FUTURE TERM-1 (primary + fallback) ─────────────────────────────────────────
-def get_future_term1_date() -> Optional[Dict[str, datetime]]:
-    next_year = datetime.now().year + 1
-    print(f"{EMOJI_CRYSTAL_BALL} Checking future Term-1 from official page (best-effort)")
-    # 1) Official page
-    try:
-        r = requests.get(FUTURE_TERMS_URL, headers=BROWSER_HEADERS, timeout=30)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.text, "html.parser")
-        heading = next((h for h in soup.find_all(["h2","h3"])
-                        if "future term dates" in h.get_text().lower()), None)
-        if heading:
-            table = heading.find_next("table")
-            if table:
-                for row in table.find_all("tr"):
-                    th = row.find("th")
-                    if th and th.get_text().strip().isdigit() and int(th.get_text()) == next_year:
-                        td = row.find("td")
-                        if not td:
-                            break
-                        text = re.sub(r"\s+", " ", td.get_text(separator=" ")).strip()
-                        parts = re.split(r"\bto\b|\-", text)
-                        if len(parts) == 2:
-                            start = datetime.strptime(f"{parts[0].strip()} {next_year}", "%d %B %Y")
-                            end   = datetime.strptime(f"{parts[1].strip()} {next_year}", "%d %B %Y")
-                            print(f"{EMOJI_CHECK} Future Term-1: {start.date()} → {end.date()} (official)")
-                            return {"start": start, "end": end, "summary": "Term 1"}
-        print(f"{EMOJI_WARNING} Official future-term table not found or unparsable")
-    except Exception as e:
-        print(f"{EMOJI_WARNING} Future-term official fetch blocked: {e}")
-
-    # 2) Fallback mirrors for next_year Term 1
-    t1 = scrape_future_term1_from_alt_sources(next_year)
-    if t1:
-        return t1
+    print(f"{EMOJI_WARNING} HWK: no row for year {year}")
     return None
 
 # ─── FETCH / UPDATE LOGIC ───────────────────────────────────────────────────────
 def update_school_terms() -> bool:
     print(f"{EMOJI_CALENDAR} Downloading school terms…")
-    if TEST_MODE and ERROR_SIMULATION in ("school_terms","both","connection"):
-        raise requests.exceptions.ConnectionError("Simulated")
-    if TEST_MODE and ERROR_SIMULATION == "404":
-        raise requests.exceptions.HTTPError("404 Simulated")
 
     terms: Optional[List[Dict[str, datetime]]] = None
 
@@ -425,27 +362,40 @@ def update_school_terms() -> bool:
         r = requests.get(SCHOOL_TERMS_URL, headers=BROWSER_HEADERS, timeout=30)
         r.raise_for_status()
         if r.text.strip().startswith("BEGIN:VCALENDAR"):
-            terms = extract_term_dates(r.text)
+            parsed = extract_term_dates(r.text)
+            # Filter to only the configured year (if ICS contains multiple)
+            terms = [t for t in parsed if t["start"].year == TERMS_YEAR]
             if terms:
                 print(f"{EMOJI_CHECK} Parsed terms from official ICS")
     except Exception as e:
-        print(f"{EMOJI_WARNING} ICS fetch failed ({e}); falling back to public mirrors")
+        print(f"{EMOJI_WARNING} ICS fetch failed ({e}); falling back to holidayswithkids.com.au")
 
-    # 2) Fallback to public mirror pages if needed
+    # 2) Fallback to Holidays With Kids (for TERMS_YEAR)
     if not terms:
-        terms = scrape_terms_from_alt_sources(2025)
+        html = _fetch_text(HWK_URL)
+        if not html:
+            raise Exception("All sources blocked for SA term dates")
+        soup = BeautifulSoup(html, "html.parser")
+        terms = _extract_terms_from_hwk_year_section(soup, TERMS_YEAR)
         if not terms:
-            raise Exception("All sources blocked or unparsable for SA term dates 2025")
+            raise Exception("Could not parse SA term dates from holidayswithkids.com.au")
+        print(f"{EMOJI_CHECK} Parsed SA terms {TERMS_YEAR} from holidayswithkids.com.au")
 
-    # 3) Optionally augment with Future Term-1 if available
+    # 3) Add Future Term-1 (next year) from Holidays With Kids table
     future_ok = True
     try:
-        fut = get_future_term1_date()
-        if fut and not any(t["start"].year == fut["start"].year and t["summary"].endswith("1") for t in terms):
-            print(f"{EMOJI_PLUS} Adding future Term-1")
-            terms.append(fut)
-        elif not fut:
+        html = _fetch_text(HWK_URL)
+        if not html:
             future_ok = False
+        else:
+            soup = BeautifulSoup(html, "html.parser")
+            next_year = TERMS_YEAR + 1
+            fut = _extract_future_term1_from_hwk(soup, next_year)
+            if fut and not any(t["start"].year == fut["start"].year and t["summary"].endswith("1") for t in terms):
+                print(f"{EMOJI_PLUS} Adding future Term-1")
+                terms.append(fut)
+            elif not fut:
+                future_ok = False
     except Exception as e:
         print(f"{EMOJI_WARNING} Future-term step failed: {e}")
         future_ok = False
@@ -462,34 +412,21 @@ def update_school_terms() -> bool:
 
 def update_public_holidays():
     print(f"{EMOJI_CALENDAR} Downloading public holidays…")
-    if TEST_MODE and ERROR_SIMULATION in ("public_holidays","both","connection"):
-        raise requests.exceptions.ConnectionError("Simulated")
-    if TEST_MODE and ERROR_SIMULATION == "404":
-        raise requests.exceptions.HTTPError("404 Simulated")
-
     r = requests.get(ICS_URL, timeout=30); r.raise_for_status()
     cleaned = []
     for L in r.text.splitlines():
         if L.startswith("SUMMARY"):
             p = L.find(":")
-            if p > -1:
-                cleaned.append(f"{L[:p+1]}{clean_event_name(L[p+1:])}")
-            else:
-                cleaned.append(L)
+            cleaned.append(f"{L[:p+1]}{clean_event_name(L[p+1:])}" if p > -1 else L)
         else:
             cleaned.append(L)
-
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(cleaned))
     print(f"{EMOJI_SAVE} Wrote {OUTPUT_FILE}")
 
 def main():
     try:
-        if TEST_MODE and not ERROR_SIMULATION:
-            raise Exception("Simulated general error")
-
-        ok_ph     = False
-        ok_st     = False
+        ok_ph = ok_st = False
         ok_future = True
 
         try:
@@ -501,7 +438,7 @@ def main():
 
         try:
             ok_future = update_school_terms()
-            ok_st     = True
+            ok_st = True
         except Exception as e:
             print(f"{EMOJI_ERROR} School terms failed: {e}")
             send_failure_notification(str(e), "school_terms")
