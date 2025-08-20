@@ -28,24 +28,35 @@ EMOJI_PENCIL       = "📝"
 # ─── CONFIG ─────────────────────────────────────────────────────────────────────
 TEST_MODE            = False
 ERROR_SIMULATION     = None   # e.g. "public_holidays", "school_terms", "future_term", "connection", "404", etc.
-ICS_URL             = "https://www.officeholidays.com/ics-all/australia/south-australia"
-SCHOOL_TERMS_URL    = "https://www.education.sa.gov.au/docs/sper/communications/term-calendar/ical-School-term-dates-calendar-2025.ics"
-FUTURE_TERMS_URL    = "https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools"
-OUTPUT_FILE         = "SA-Public-Holidays.ics"
-SCHOOL_OUTPUT_FILE  = "SA-School-Terms-Holidays.ics"
+
+# Public holidays (unchanged)
+ICS_URL              = "https://www.officeholidays.com/ics-all/australia/south-australia"
+
+# School terms ICS — this URL is live, but can return 403 without headers
+SCHOOL_TERMS_URL     = "https://www.education.sa.gov.au/docs/sper/communications/term-calendar/ical-School-term-dates-calendar-2025.ics"
+
+# Main page for term dates (moved under parents-and-families)
+FUTURE_TERMS_URL     = "https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools"
+
+OUTPUT_FILE          = "SA-Public-Holidays.ics"
+SCHOOL_OUTPUT_FILE   = "SA-School-Terms-Holidays.ics"
 
 PUBLIC_HOLIDAYS_SOURCE_URL = "https://www.officeholidays.com/subscribe/australia/south-australia"
-SCHOOL_TERMS_SOURCE_URL    = "https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools"
+SCHOOL_TERMS_SOURCE_URL    = "https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools"
+
+# Browser-like headers to prevent 403/404 gating on Education SA endpoints
+BROWSER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0",
+    "Accept": "text/calendar, text/html;q=0.9, */*;q=0.8",
+    "Referer": SCHOOL_TERMS_SOURCE_URL,
+    "Connection": "keep-alive",
+}
 
 # ─── UTILITIES ────────────────────────────────────────────────────────────────────
 def clean_event_name(summary: str) -> str:
     return re.sub(r"\s*\([^)]*\)", "", summary).strip()
 
 def get_next_update_date() -> str:
-    """
-    Returns the first of next calendar month, e.g.
-    'Friday 1st August 2025'
-    """
     today = datetime.now()
     if today.month == 12:
         next_month = datetime(today.year + 1, 1, 1)
@@ -206,7 +217,7 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
             f"UID:START-{start}-TERM{num}@sa-school-terms.education.sa.gov.au",
             f"CREATED:{ts}",
             f"DESCRIPTION:First day of Term {num} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
-            "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
+            "URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools",
             f"DTSTART;VALUE=DATE:{start}","DTEND;VALUE=DATE:{nextd}","DTSTAMP:{ts}",
             "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
             f"SUMMARY;LANGUAGE=en-us:{summ}",
@@ -220,7 +231,6 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
         nextde = format_dt(term["end"] + timedelta(days=1))
         summ_end = f"Term {num} End"
         if term["end"].year == 2026 and num == "1":
-            # special distinct 2026 Term1-End
             cal += [
                 "BEGIN:VEVENT","CLASS:PUBLIC",
                 f"UID:TERM1-2026-END-DISTINCT-{uuid.uuid4()}@sa-school-terms.education.sa.gov.au",
@@ -228,7 +238,7 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
                 "DESCRIPTION:Last day of Term 1, 2026 for South Australian schools.\\n\\n"
                 "This event marks the end of the first term on April 10, 2026.\\n\\n"
                 "Information provided by education.sa.gov.au",
-                "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
+                "URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools",
                 f"DTSTART;VALUE=DATE:{end}","DTEND;VALUE=DATE:{nextde}",
                 f"DTSTAMP:{ts.replace('Z','1Z')}",
                 "LOCATION:South Australia Schools","PRIORITY:5",
@@ -245,7 +255,7 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
                 f"UID:END-{end}-TERM{num}@sa-school-terms.education.sa.gov.au",
                 f"CREATED:{ts}",
                 f"DESCRIPTION:Last day of Term {num} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
-                "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
+                "URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools",
                 f"DTSTART;VALUE=DATE:{end}","DTEND;VALUE=DATE:{nextde}","DTSTAMP:{ts}",
                 "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
                 f"SUMMARY;LANGUAGE=en-us:{summ_end}",
@@ -265,7 +275,7 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
             f"UID:HOLIDAY-{start}-TERM{num}@sa-school-terms.education.sa.gov.au",
             f"CREATED:{ts}",
             f"DESCRIPTION:School holidays after Term {num} for South Australian schools.\\n\\nInformation provided by education.sa.gov.au",
-            "URL:https://www.education.sa.gov.au/students/term-dates-south-australian-state-schools",
+            "URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools",
             f"DTSTART;VALUE=DATE:{start}","DTEND;VALUE=DATE:{end}","DTSTAMP:{ts}",
             "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
             f"SUMMARY;LANGUAGE=en-us:{hol['summary']}",
@@ -281,7 +291,8 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
 def get_future_term1_date() -> Optional[Dict[str, datetime]]:
     print(f"{EMOJI_CRYSTAL_BALL} Checking future Term-1 from {FUTURE_TERMS_URL}")
     try:
-        r = requests.get(FUTURE_TERMS_URL); r.raise_for_status()
+        r = requests.get(FUTURE_TERMS_URL, headers=BROWSER_HEADERS, timeout=30)
+        r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
         heading = next((h for h in soup.find_all(["h2","h3"])
                         if "future term dates" in h.get_text().lower()), None)
@@ -323,7 +334,9 @@ def update_school_terms() -> bool:
     if TEST_MODE and ERROR_SIMULATION == "404":
         raise requests.exceptions.HTTPError("404 Simulated")
 
-    r = requests.get(SCHOOL_TERMS_URL); r.raise_for_status()
+    # Use browser-like headers to avoid 403/404 gating
+    r = requests.get(SCHOOL_TERMS_URL, headers=BROWSER_HEADERS, timeout=30)
+    r.raise_for_status()
     terms = extract_term_dates(r.text)
     if not terms:
         raise Exception("No school terms found")
