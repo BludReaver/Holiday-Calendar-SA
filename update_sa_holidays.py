@@ -38,18 +38,11 @@ SCHOOL_TERMS_URL     = "https://www.education.sa.gov.au/docs/sper/communications
 # Human page (usually also gated from CI)
 FUTURE_TERMS_URL     = "https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools"
 
-# Fallback sources (public mirrors with the same dates)
-ALT_TERMS_SOURCES = [
-    ("https://www.schoolholidayssa.com.au/sa-school-holiday-dates-2025/", "schoolholidayssa.com.au"),
-    ("https://saschoolholidays.com.au/sa-school-holidays-2025/", "saschoolholidays.com.au"),
-    ("https://www.calendar-australia.com/school-calendars/south-australia/2025/1/1/1/1/", "calendar-australia.com"),
-]
-
 OUTPUT_FILE          = "SA-Public-Holidays.ics"
 SCHOOL_OUTPUT_FILE   = "SA-School-Terms-Holidays.ics"
 
 PUBLIC_HOLIDAYS_SOURCE_URL = "https://www.officeholidays.com/subscribe/australia/south-australia"
-SCHOOL_TERMS_SOURCE_URL    = "https://www.schoolholidayssa.com.au/sa-school-holiday-dates-2025/"  # most reliable fallback page
+SCHOOL_TERMS_SOURCE_URL    = "https://www.schoolholidayssa.com.au/sa-school-holiday-dates-2025/"
 
 # Browser-like headers (official endpoints sometimes require this)
 BROWSER_HEADERS = {
@@ -92,7 +85,7 @@ def send_failure_notification(error_excerpt: str, failed_calendar: Optional[str]
         cal_source = f"🔗 Source: {PUBLIC_HOLIDAYS_SOURCE_URL}\n\n"
     elif failed_calendar == "school_terms":
         cal_info   = f"{EMOJI_CALENDAR} School Terms update failed\n\n"
-        cal_source = f"🔗 Source: {SCHOOL_TERMS_SOURCE_URL}\n\n"
+        cal_source = f"🔗 Source: https://www.education.sa.gov.au\n\n"
     elif failed_calendar == "future_term":
         cal_info   = f"{EMOJI_CALENDAR} Future Term-1 fetch failed\n\n"
         cal_source = f"🔗 Source: {FUTURE_TERMS_URL}\n\n"
@@ -101,7 +94,7 @@ def send_failure_notification(error_excerpt: str, failed_calendar: Optional[str]
         cal_source = (
             f"🔗 Sources:\n"
             f"- Public Holidays: {PUBLIC_HOLIDAYS_SOURCE_URL}\n"
-            f"- School Terms:    {SCHOOL_TERMS_SOURCE_URL}\n"
+            f"- School Terms:    https://www.education.sa.gov.au\n"
             f"- Future Terms:    {FUTURE_TERMS_URL}\n\n"
         )
 
@@ -138,7 +131,7 @@ def send_success_notification(future_term_fetched: bool = True):
         note = f"{EMOJI_WARNING} Could not fetch future Term-1 dates.\n\n"
 
     message = (
-        f"{EMOOJI_CHECK if False else EMOJI_CHECK} SA Calendars Updated! {EMOJI_CHECK}\n\n"
+        f"{EMOJI_CHECK} SA Calendars Updated! {EMOJI_CHECK}\n\n"
         "✓ Public Holidays\n"
         "✓ School Terms & Holidays\n\n"
         f"{note}"
@@ -315,42 +308,42 @@ def _parse_au_date(s: str) -> datetime:
             return datetime.strptime(s, fmt)
         except ValueError:
             pass
-    # Some sources present "28 April 2025" without commas already covered above
     raise ValueError(f"Unrecognized date: {s}")
 
 def _extract_terms_from_text(text: str, year: int) -> List[Dict[str, datetime]]:
-    # Normalize whitespace for robust matching
     t = re.sub(r"\s+", " ", text.replace("\u2013", "-")).strip()
     terms: List[Dict[str, datetime]] = []
     for n in range(1, 5):
-        # Match patterns like:
-        # "Term 1 Tuesday, 28 January 2025 Friday, 11 April 2025"
-        # "Term 1 28 January 2025 – 11 April 2025"
-        # "Term 3 21 July 2025 26 September 2025"
-        patt_list = [
-            rf"Term\s*{n}\s*[:,\-]?\s*(?:[A-Za-z]+,?\s*)?(\d{{1,2}}\s+\w+\s+{year})\s*(?:-|to|–)?\s*(?:[A-Za-z]+,?\s*)?(\d{{1,2}}\s+\w+\s+{year})",
-        ]
-        found = None
-        for patt in patt_list:
-            m = re.search(patt, t, flags=re.I)
-            if m:
-                found = m
-                break
-        if not found:
+        patt = rf"Term\s*{n}\s*[:,\-]?\s*(?:[A-Za-z]+,?\s*)?(\d{{1,2}}\s+\w+\s+{year})\s*(?:-|to|–)\s*(?:[A-Za-z]+,?\s*)?(\d{{1,2}}\s+\w+\s+{year})"
+        m = re.search(patt, t, flags=re.I)
+        if not m:
             return []
-        start_s, end_s = found.group(1), found.group(2)
-        start_dt = _parse_au_date(start_s)
-        end_dt   = _parse_au_date(end_s)
+        start_dt = _parse_au_date(m.group(1))
+        end_dt   = _parse_au_date(m.group(2))
         terms.append({"start": start_dt, "end": end_dt, "summary": f"Term {n}"})
     return terms
 
+def _extract_term1_from_text(text: str, year: int) -> Optional[Dict[str, datetime]]:
+    t = re.sub(r"\s+", " ", text.replace("\u2013", "-")).strip()
+    patt = rf"Term\s*1\s*[:,\-]?\s*(?:[A-Za-z]+,?\s*)?(\d{{1,2}}\s+\w+\s+{year})\s*(?:-|to|–)\s*(?:[A-Za-z]+,?\s*)?(\d{{1,2}}\s+\w+\s+{year})"
+    m = re.search(patt, t, flags=re.I)
+    if not m:
+        return None
+    return {"start": _parse_au_date(m.group(1)),
+            "end":   _parse_au_date(m.group(2)),
+            "summary": "Term 1"}
+
 def scrape_terms_from_alt_sources(year: int = 2025) -> Optional[List[Dict[str, datetime]]]:
-    for url, label in ALT_TERMS_SOURCES:
+    alt_urls = [
+        (f"https://www.schoolholidayssa.com.au/sa-school-holiday-dates-{year}/", "schoolholidayssa.com.au"),
+        (f"https://saschoolholidays.com.au/sa-school-holidays-{year}/", "saschoolholidays.com.au"),
+        (f"https://www.calendar-australia.com/school-calendars/south-australia/{year}/1/1/1/1/", "calendar-australia.com"),
+    ]
+    for url, label in alt_urls:
         print(f"{EMOJI_SEARCH} Trying fallback source: {label}")
         html = _fetch_text(url, headers=BROWSER_HEADERS)
         if not html:
             continue
-        # Use BeautifulSoup to get human-visible text; then regex it
         text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
         terms = _extract_terms_from_text(text, year)
         if len(terms) == 4:
@@ -360,46 +353,62 @@ def scrape_terms_from_alt_sources(year: int = 2025) -> Optional[List[Dict[str, d
             print(f"{EMOJI_WARNING} Could not parse 4 terms from {label}")
     return None
 
-# ─── FUTURE TERM-1 (best-effort) ────────────────────────────────────────────────
+def scrape_future_term1_from_alt_sources(year: int) -> Optional[Dict[str, datetime]]:
+    alt_urls = [
+        (f"https://www.schoolholidayssa.com.au/sa-school-holiday-dates-{year}/", "schoolholidayssa.com.au"),
+        (f"https://saschoolholidays.com.au/sa-school-holidays-{year}/", "saschoolholidays.com.au"),
+        (f"https://www.calendar-australia.com/school-calendars/south-australia/{year}/1/1/1/1/", "calendar-australia.com"),
+    ]
+    for url, label in alt_urls:
+        print(f"{EMOJI_SEARCH} Future-term fallback: {label}")
+        html = _fetch_text(url, headers=BROWSER_HEADERS)
+        if not html:
+            continue
+        text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
+        t1 = _extract_term1_from_text(text, year)
+        if t1:
+            print(f"{EMOJI_CHECK} Parsed Term 1 {year} from {label}")
+            return t1
+        else:
+            print(f"{EMOJI_warning if False else EMOJI_WARNING} Could not parse Term 1 {year} from {label}")
+    return None
+
+# ─── FUTURE TERM-1 (primary + fallback) ─────────────────────────────────────────
 def get_future_term1_date() -> Optional[Dict[str, datetime]]:
+    next_year = datetime.now().year + 1
     print(f"{EMOJI_CRYSTAL_BALL} Checking future Term-1 from official page (best-effort)")
+    # 1) Official page
     try:
         r = requests.get(FUTURE_TERMS_URL, headers=BROWSER_HEADERS, timeout=30)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
         heading = next((h for h in soup.find_all(["h2","h3"])
                         if "future term dates" in h.get_text().lower()), None)
-        if not heading:
-            print(f"{EMOJI_WARNING} No 'Future term dates' heading found")
-            return None
-        table = heading.find_next("table")
-        if not table:
-            print(f"{EMOJI_WARNING} No table after heading")
-            return None
-
-        year = datetime.now().year + 1
-        for row in table.find_all("tr"):
-            th = row.find("th")
-            if th and th.get_text().strip().isdigit() and int(th.get_text()) == year:
-                td = row.find("td")
-                if not td:
-                    return None
-                text = re.sub(r"\s+", " ", td.get_text(separator=" ")).strip()
-                parts = re.split(r"\bto\b|\-", text)
-                if len(parts) != 2:
-                    print(f"{EMOJI_WARNING} Unexpected format for future term: {text}")
-                    return None
-                start = datetime.strptime(f"{parts[0].strip()} {year}", "%d %B %Y")
-                end   = datetime.strptime(f"{parts[1].strip()} {year}", "%d %B %Y")
-                print(f"{EMOJI_CHECK} Future Term-1: {start.date()} → {end.date()}")
-                return {"start": start, "end": end, "summary": "Term 1"}
-        print(f"{EMOJI_WARNING} No row for next year")
-        return None
-
+        if heading:
+            table = heading.find_next("table")
+            if table:
+                for row in table.find_all("tr"):
+                    th = row.find("th")
+                    if th and th.get_text().strip().isdigit() and int(th.get_text()) == next_year:
+                        td = row.find("td")
+                        if not td:
+                            break
+                        text = re.sub(r"\s+", " ", td.get_text(separator=" ")).strip()
+                        parts = re.split(r"\bto\b|\-", text)
+                        if len(parts) == 2:
+                            start = datetime.strptime(f"{parts[0].strip()} {next_year}", "%d %B %Y")
+                            end   = datetime.strptime(f"{parts[1].strip()} {next_year}", "%d %B %Y")
+                            print(f"{EMOJI_CHECK} Future Term-1: {start.date()} → {end.date()} (official)")
+                            return {"start": start, "end": end, "summary": "Term 1"}
+        print(f"{EMOJI_WARNING} Official future-term table not found or unparsable")
     except Exception as e:
-        print(f"{EMOJI_WARNING} Future-term fetch blocked: {e}")
-        # If needed we could add a third-party future fallback here.
-        return None
+        print(f"{EMOJI_WARNING} Future-term official fetch blocked: {e}")
+
+    # 2) Fallback mirrors for next_year Term 1
+    t1 = scrape_future_term1_from_alt_sources(next_year)
+    if t1:
+        return t1
+    return None
 
 # ─── FETCH / UPDATE LOGIC ───────────────────────────────────────────────────────
 def update_school_terms() -> bool:
