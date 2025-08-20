@@ -195,8 +195,8 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
         num   = term["summary"].split()[-1]
         start = format_dt(term["start"])
         end   = format_dt(term["end"])
-        nextd = format_dt(term["start"] + timedelta(days=1])
-        nextde= format_dt(term["end"] + timedelta(days=1])
+        nextd = format_dt(term["start"] + timedelta(days=1))   # FIXED
+        nextde= format_dt(term["end"] + timedelta(days=1))     # FIXED
 
         # Term start
         summ = f"Term {num} Start"
@@ -276,26 +276,21 @@ def _strip_ordinals(s: str) -> str:
     return re.sub(r"(\d+)(st|nd|rd|th)", r"\1", s, flags=re.I)
 
 def _parse_day_month(s: str, year: int) -> datetime:
-    s = _strip_ordinals(s.strip())
-    s = s.replace("–", "-").replace("—", "-").replace(" to ", "-")
-    return datetime.strptime(f"{s} {year}", "%d %B %Y")
+    # Accept both long and short month names
+    s = _strip_ordinals(s.strip()).replace("–","-").replace("—","-").replace(" to ","-")
+    for fmt in ("%d %B %Y", "%d %b %Y"):
+        try:
+            return datetime.strptime(f"{s} {year}", fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"Unrecognized day-month: {s}")
 
 def _extract_terms_from_hwk_anywhere(text: str, year: int) -> Optional[List[Dict[str, datetime]]]:
-    """
-    Find 'Term 1 ... Term 4' for the given year anywhere in the page text.
-    Handles patterns like:
-      '2025 Term 1: 29 January to 13 April'
-      'Term 1 – 29 January – 13 April (2025)'
-      'Term 1 29 Jan to 13 Apr'
-    We add the year when parsing the dates.
-    """
     t = " ".join(text.split())
-    # Ensure the correct year appears nearby in the page, otherwise bail
     if str(year) not in t:
         return None
 
     terms: List[Dict[str, datetime]] = []
-    # Use a forgiving regex per term; avoid anchoring to headings/sections
     for n in range(1, 5):
         patt = rf"Term\s*{n}\s*[:\-–—]?\s*(?:[A-Za-z]{{3,9}},?\s*)?(\d{{1,2}}\s+{MONTHS})\s*(?:to|–|—|-)\s*(?:[A-Za-z]{{3,9}},?\s*)?(\d{{1,2}}\s+{MONTHS})"
         m = re.search(patt, t, flags=re.I)
@@ -304,26 +299,17 @@ def _extract_terms_from_hwk_anywhere(text: str, year: int) -> Optional[List[Dict
         start = _parse_day_month(m.group(1), year)
         end   = _parse_day_month(m.group(3), year)
         terms.append({"start": start, "end": end, "summary": f"Term {n}"})
-        # Remove the matched chunk to reduce accidental re-matches
         t = t.replace(m.group(0), " ", 1)
     return terms
 
 def _extract_future_term1_from_hwk_anywhere(text: str, year: int) -> Optional[Dict[str, datetime]]:
-    """
-    Look for the next year's Term 1 near the year mention anywhere on the page.
-    Examples the regex tolerates:
-      '2026 ... Term 1 ... 27 January to 10 April'
-      'Term 1: 27 Jan – 10 Apr 2026'
-    """
     t = " ".join(text.split())
-    # First try: anchor the year, then Term 1 within a limited window
     window = re.search(
         rf"{year}(.{{0,200}}?Term\s*1.+?)"
         rf"(\d{{1,2}}\s+{MONTHS}).{{0,20}}(?:to|–|—|-).{{0,20}}(\d{{1,2}}\s+{MONTHS})",
         t, flags=re.I
     )
     if not window:
-        # Fallback: any 'Term 1 ... dates ...' on page (yearless), but only if the year appears somewhere
         if str(year) not in t:
             return None
         window = re.search(
