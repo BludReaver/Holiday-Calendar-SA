@@ -4,10 +4,12 @@ import sys
 import os
 import re
 import uuid
+import time
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional, Tuple
+
 import requests
 import httpx
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional
 from bs4 import BeautifulSoup
 
 # Ensure stdout is UTF-8 so emojis render in logs
@@ -25,7 +27,8 @@ EMOJI_SUN          = "🌞"
 EMOJI_PLUS         = "➕"
 
 # ─── CONFIG ─────────────────────────────────────────────────────────────────────
-TERMS_YEAR = 2025  # bump yearly
+TERMS_YEAR = 2025  # ← bump yearly
+NEXT_YEAR  = TERMS_YEAR + 1
 
 # Public holidays source (unchanged)
 ICS_URL = "https://www.officeholidays.com/ics-all/australia/south-australia"
@@ -33,11 +36,19 @@ ICS_URL = "https://www.officeholidays.com/ics-all/australia/south-australia"
 # Official SA school terms ICS (may 403/404 from CI)
 SCHOOL_TERMS_URL = "https://www.education.sa.gov.au/docs/sper/communications/term-calendar/ical-School-term-dates-calendar-2025.ics"
 
-# Kept only for display link in generated ICS
+# Human reference page (for ICS metadata/URL fields)
 EDU_TERMS_PAGE = "https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools"
 
-# Fallback site to scrape
+# Primary fallback site to scrape
 HWK_URL = "https://holidayswithkids.com.au/sa-school-holidays/"
+
+# Additional public mirrors used as secondary fallbacks
+def FALLBACK_YEAR_URLS(year: int):
+    return [
+        (f"https://www.schoolholidayssa.com.au/sa-school-holiday-dates-{year}/", "schoolholidayssa.com.au"),
+        (f"https://saschoolholidays.com.au/sa-school-holidays-{year}/", "saschoolholidays.com.au"),
+        (f"https://www.calendar-australia.com/school-calendars/south-australia/{year}/1/1/1/1/", "calendar-australia.com"),
+    ]
 
 # Output filenames
 OUTPUT_FILE         = "SA-Public-Holidays.ics"
@@ -50,7 +61,9 @@ PUBLIC_HOLIDAYS_SOURCE_URL = "https://www.officeholidays.com/subscribe/australia
 BROWSER_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0",
     "Accept": "text/calendar, text/html;q=0.9, */*;q=0.8",
+    "Accept-Language": "en-AU,en;q=0.9",
     "Connection": "keep-alive",
+    "Cache-Control": "no-cache",
 }
 
 # ─── UTILITIES ───────────────────────────────────────────────────────────────────
@@ -191,12 +204,12 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
         "CALSCALE:GREGORIAN","METHOD:PUBLISH","X-MS-OLK-FORCEINSPECTOROPEN:TRUE"
     ]
 
-    for term in terms:
+    for term in sorted(terms, key=lambda t: (t["start"], t["summary"])):
         num   = term["summary"].split()[-1]
         start = format_dt(term["start"])
         end   = format_dt(term["end"])
-        nextd = format_dt(term["start"] + timedelta(days=1))   # FIXED
-        nextde= format_dt(term["end"] + timedelta(days=1))     # FIXED
+        nextd = format_dt(term["start"] + timedelta(days=1))
+        nextde= format_dt(term["end"] + timedelta(days=1))
 
         # Term start
         summ = f"Term {num} Start"
@@ -214,7 +227,7 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
             "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
         ]
 
-        # Term end (with special-case kept)
+        # Term end (special case for 2026 kept as requested)
         if term["end"].year == 2026 and num == "1":
             cal += [
                 "BEGIN:VEVENT","CLASS:PUBLIC",
@@ -260,68 +273,176 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
     cal.append("END:VCALENDAR")
     return "\n".join(cal)
 
-# ─── HOLIDAYSWITHKIDS SCRAPERS (ROBUST, STRUCTURE-AGNOSTIC) ─────────────────────
-def _fetch_text(url: str) -> Optional[str]:
-    try:
-        r = requests.get(url, headers=BROWSER_HEADERS, timeout=30)
-        r.raise_for_status()
-        return r.text
-    except Exception as e:
-        print(f"{EMOJI_WARNING} Fetch failed from {url}: {e}")
-        return None
-
-MONTHS = r"(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)"
-
-def _strip_ordinals(s: str) -> str:
-    return re.sub(r"(\d+)(st|nd|rd|th)", r"\1", s, flags=re.I)
-
-def _parse_day_month(s: str, year: int) -> datetime:
-    # Accept both long and short month names
-    s = _strip_ordinals(s.strip()).replace("–","-").replace("—","-").replace(" to ","-")
-    for fmt in ("%d %B %Y", "%d %b %Y"):
+# ─── FETCHING (with tiny retry/backoff) ─────────────────────────────────────────
+def fetch_text(url: str, *, tries: int = 3, sleep: float = 0.6) -> Optional[str]:
+    last_err = None
+    for i in range(tries):
         try:
-            return datetime.strptime(f"{s} {year}", fmt)
-        except ValueError:
-            continue
-    raise ValueError(f"Unrecognized day-month: {s}")
+            r = requests.get(url, headers=BROWSER_HEADERS, timeout=30)
+            r.raise_for_status()
+            return r.text
+        except Exception as e:
+            last_err = e
+            time.sleep(sleep)
+    print(f"{EMOJI_WARNING} Fetch failed from {url}: {last_err}")
+    return None
 
-def _extract_terms_from_hwk_anywhere(text: str, year: int) -> Optional[List[Dict[str, datetime]]]:
-    t = " ".join(text.split())
-    if str(year) not in t:
+# ─── ROBUST DATE TOKEN PARSING ──────────────────────────────────────────────────
+_MONTH_MAP = {
+    'jan':1,'january':1,'feb':2,'february':2,'mar':3,'march':3,'apr':4,'april':4,
+    'may':5,'jun':6,'june':6,'jul':7,'july':7,'aug':8,'august':8,'sep':9,'sept':9,'september':9,
+    'oct':10,'october':10,'nov':11,'november':11,'dec':12,'december':12
+}
+WEEKDAY_OPT = r"(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\.?\s*,?\s*"
+MONTHS_RX   = r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t|tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)"
+DMY_RX      = rf"(?:{WEEKDAY_OPT})?(\d{{1,2}})(?:st|nd|rd|th)?\s+({MONTHS_RX})(?:\s*,?\s*(\d{{4}}))?"
+MDY_RX      = rf"(?:{WEEKDAY_OPT})?({MONTHS_RX})\s+(\d{{1,2}})(?:st|nd|rd|th)?(?:\s*,?\s*(\d{{4}}))?"
+DATE_TOKEN_RX = rf"(?:{DMY_RX})|(?:{MDY_RX})"
+SEP_RX = r"(?:\bto\b|\buntil\b|–|—|-)"
+
+def _parse_date_loose(token: str, default_year: int) -> Optional[datetime]:
+    s = " ".join(token.replace("—","-").replace("–","-").split())
+    m = re.fullmatch(DMY_RX, s, flags=re.I)
+    if m:
+        day  = int(m.group(1)); mon = _MONTH_MAP[m.group(2).lower()]
+        year = int(m.group(3)) if m.group(3) else default_year
+        return datetime(year, mon, day)
+    m = re.fullmatch(MDY_RX, s, flags=re.I)
+    if m:
+        mon = _MONTH_MAP[m.group(1).lower()]; day = int(m.group(2))
+        year = int(m.group(3)) if m.group(3) else default_year
+        return datetime(year, mon, day)
+    return None
+
+def _find_two_dates_near(text: str, anchor_idx: int, default_year: int, window: int = 1200
+                         ) -> Optional[Tuple[datetime, datetime, str]]:
+    seg = text[anchor_idx: anchor_idx + window]
+    matches = list(re.finditer(DATE_TOKEN_RX, seg, flags=re.I))
+    if not matches:
         return None
+    # adjacent pairs first (strongest signal)
+    for i in range(len(matches)-1):
+        a, b = matches[i], matches[i+1]
+        between = seg[a.end():b.start()]
+        if not re.search(SEP_RX, between, flags=re.I):
+            continue
+        d1 = _parse_date_loose(a.group(0), default_year)
+        d2 = _parse_date_loose(b.group(0), default_year)
+        if not d1 or not d2:
+            continue
+        # sensible SA Term 1 heuristic
+        if d1.month in (1,2) and d2 >= d1 and d2.month in (3,4):
+            snippet = seg[max(0, a.start()-40): min(len(seg), b.end()+40)]
+            return d1, d2, snippet
+    # fall back: any pair with a separator
+    for i in range(len(matches)-1):
+        for j in range(i+1, len(matches)):
+            a, b = matches[i], matches[j]
+            between = seg[a.end():b.start()]
+            if not re.search(SEP_RX, between, flags=re.I):
+                continue
+            d1 = _parse_date_loose(a.group(0), default_year)
+            d2 = _parse_date_loose(b.group(0), default_year)
+            if d1 and d2 and d1 <= d2:
+                snippet = seg[max(0, a.start()-40): min(len(seg), b.end()+40)]
+                return d1, d2, snippet
+    return None
 
-    terms: List[Dict[str, datetime]] = []
+def _slice_for_year(text: str, year: int, span: int = 6000) -> str:
+    m = re.search(rf"\b{year}\b", text)
+    if not m:
+        return text
+    start = m.start()
+    return text[start:start+span]
+
+def _extract_terms_four(text: str, year: int) -> Optional[List[Dict[str, datetime]]]:
+    """Find Term 1..4 inside a year-focused slice, robust to formats."""
+    segment = _slice_for_year(text, year)
+    results: List[Dict[str, datetime]] = []
     for n in range(1, 5):
-        patt = rf"Term\s*{n}\s*[:\-–—]?\s*(?:[A-Za-z]{{3,9}},?\s*)?(\d{{1,2}}\s+{MONTHS})\s*(?:to|–|—|-)\s*(?:[A-Za-z]{{3,9}},?\s*)?(\d{{1,2}}\s+{MONTHS})"
-        m = re.search(patt, t, flags=re.I)
-        if not m:
+        found = None
+        for m in re.finditer(rf"Term\s*{n}\b", segment, flags=re.I):
+            hit = _find_two_dates_near(segment, m.start(), year, window=1600)
+            if hit:
+                d1, d2, _ = hit
+                found = {"start": d1, "end": d2, "summary": f"Term {n}"}
+                break
+        if not found:
             return None
-        start = _parse_day_month(m.group(1), year)
-        end   = _parse_day_month(m.group(3), year)
-        terms.append({"start": start, "end": end, "summary": f"Term {n}"})
-        t = t.replace(m.group(0), " ", 1)
+        results.append(found)
+    return results
+
+def _extract_term1_any(text: str, year: int) -> Optional[Dict[str, datetime]]:
+    """Find Term 1 (for next year) anywhere on page."""
+    # prefer the year slice (e.g., "2026") if present
+    segment = _slice_for_year(text, year)
+    # try 'Term 1' anchor(s)
+    for m in re.finditer(r"Term\s*1\b", segment, flags=re.I):
+        hit = _find_two_dates_near(segment, m.start(), year, window=1600)
+        if hit:
+            d1, d2, snippet = hit
+            print(f"{EMOJI_CHECK} Future Term-1 {year}: {d1.date()} → {d2.date()} (from page)")
+            print(f"{EMOJI_SEARCH} excerpt: …{snippet}…")
+            return {"start": d1, "end": d2, "summary": "Term 1"}
+    # last resort: scan whole text once
+    for m in re.finditer(r"Term\s*1\b", text, flags=re.I):
+        hit = _find_two_dates_near(text, m.start(), year, window=1600)
+        if hit:
+            d1, d2, snippet = hit
+            print(f"{EMOJI_CHECK} Future Term-1 {year}: {d1.date()} → {d2.date()} (from page)")
+            print(f"{EMOJI_SEARCH} excerpt: …{snippet}…")
+            return {"start": d1, "end": d2, "summary": "Term 1"}
+    return None
+
+# ─── SCRAPERS ───────────────────────────────────────────────────────────────────
+def parse_terms_from_hwk(year: int) -> Optional[List[Dict[str, datetime]]]:
+    html = fetch_text(HWK_URL, tries=3)
+    if not html:
+        return None
+    text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
+    terms = _extract_terms_four(text, year)
+    if terms:
+        print(f"{EMOJI_CHECK} Parsed SA terms {year} from holidayswithkids.com.au")
+    else:
+        print(f"{EMOJI_WARNING} Could not parse all 4 terms for {year} from holidayswithkids.com.au")
     return terms
 
-def _extract_future_term1_from_hwk_anywhere(text: str, year: int) -> Optional[Dict[str, datetime]]:
-    t = " ".join(text.split())
-    window = re.search(
-        rf"{year}(.{{0,200}}?Term\s*1.+?)"
-        rf"(\d{{1,2}}\s+{MONTHS}).{{0,20}}(?:to|–|—|-).{{0,20}}(\d{{1,2}}\s+{MONTHS})",
-        t, flags=re.I
-    )
-    if not window:
-        if str(year) not in t:
-            return None
-        window = re.search(
-            rf"Term\s*1.+?(\d{{1,2}}\s+{MONTHS}).{{0,20}}(?:to|–|—|-).{{0,20}}(\d{{1,2}}\s+{MONTHS})",
-            t, flags=re.I
-        )
-        if not window:
-            return None
+def parse_future_term1_from_hwk(year: int) -> Optional[Dict[str, datetime]]:
+    html = fetch_text(HWK_URL, tries=3)
+    if not html:
+        return None
+    text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
+    return _extract_term1_any(text, year)
 
-    start = _parse_day_month(window.group(1), year)
-    end   = _parse_day_month(window.group(3), year)
-    return {"start": start, "end": end, "summary": "Term 1"}
+def parse_terms_from_fallbacks(year: int) -> Optional[List[Dict[str, datetime]]]:
+    for url, label in FALLBACK_YEAR_URLS(year):
+        print(f"{EMOJI_SEARCH} Trying fallback source: {label}")
+        html = fetch_text(url, tries=3)
+        if not html:
+            continue
+        text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
+        terms = _extract_terms_four(text, year)
+        if terms:
+            print(f"{EMOJI_CHECK} Parsed SA terms {year} from {label}")
+            return terms
+        else:
+            print(f"{EMOJI_WARNING} Could not parse 4 terms from {label}")
+    return None
+
+def parse_future_term1_from_fallbacks(year: int) -> Optional[Dict[str, datetime]]:
+    for url, label in FALLBACK_YEAR_URLS(year):
+        print(f"{EMOJI_SEARCH} Future-term fallback: {label}")
+        html = fetch_text(url, tries=3)
+        if not html:
+            continue
+        text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
+        t1 = _extract_term1_any(text, year)
+        if t1:
+            print(f"{EMOJI_CHECK} Parsed Term 1 {year} from {label}")
+            return t1
+        else:
+            print(f"{EMOJI_WARNING} Could not parse Term 1 {year} from {label}")
+    return None
 
 # ─── FETCH / UPDATE LOGIC ───────────────────────────────────────────────────────
 def update_school_terms() -> bool:
@@ -329,7 +450,7 @@ def update_school_terms() -> bool:
 
     terms: Optional[List[Dict[str, datetime]]] = None
 
-    # 1) Try official ICS first
+    # 1) Try official ICS first (tolerate 403/404)
     try:
         r = requests.get(SCHOOL_TERMS_URL, headers=BROWSER_HEADERS, timeout=30)
         r.raise_for_status()
@@ -339,40 +460,28 @@ def update_school_terms() -> bool:
             if terms:
                 print(f"{EMOJI_CHECK} Parsed terms from official ICS")
     except Exception as e:
-        print(f"{EMOJI_WARNING} ICS fetch failed ({e}); falling back to holidayswithkids.com.au")
+        print(f"{EMOJI_WARNING} ICS fetch failed ({e}); will use public mirrors")
 
-    # 2) Fallback to Holidays With Kids (scan whole page text, structure-agnostic)
+    # 2) Holidays With Kids, else other mirrors
     if not terms:
-        html = _fetch_text(HWK_URL)
-        if not html:
-            raise Exception("All sources blocked for SA term dates")
-        soup = BeautifulSoup(html, "html.parser")
-        text = soup.get_text(" ", strip=True)
-        terms = _extract_terms_from_hwk_anywhere(text, TERMS_YEAR)
+        terms = parse_terms_from_hwk(TERMS_YEAR) or parse_terms_from_fallbacks(TERMS_YEAR)
         if not terms:
-            raise Exception("Could not parse SA term dates from holidayswithkids.com.au")
-        print(f"{EMOJI_CHECK} Parsed SA terms {TERMS_YEAR} from holidayswithkids.com.au")
+            raise Exception(f"All sources blocked or unparsable for SA term dates {TERMS_YEAR}")
 
-    # 3) Add Future Term-1 (next year) from HWK anywhere on the page
+    # 3) Future Term-1 from HWK, else mirrors
     future_ok = True
     try:
-        html = html if 'html' in locals() and html else _fetch_text(HWK_URL)
-        if not html:
+        fut = parse_future_term1_from_hwk(NEXT_YEAR) or parse_future_term1_from_fallbacks(NEXT_YEAR)
+        if fut and not any(t["start"].year == fut["start"].year and t["summary"].endswith("1") for t in terms):
+            print(f"{EMOJI_PLUS} Adding future Term-1")
+            terms.append(fut)
+        elif not fut:
             future_ok = False
-        else:
-            text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
-            next_year = TERMS_YEAR + 1
-            fut = _extract_future_term1_from_hwk_anywhere(text, next_year)
-            if fut and not any(t["start"].year == fut["start"].year and t["summary"].endswith("1") for t in terms):
-                print(f"{EMOJI_PLUS} Adding future Term-1")
-                terms.append(fut)
-            elif not fut:
-                future_ok = False
     except Exception as e:
         print(f"{EMOJI_WARNING} Future-term step failed: {e}")
         future_ok = False
 
-    terms.sort(key=lambda x: x["start"])
+    terms.sort(key=lambda x: (x["start"], x["summary"]))
     holidays = generate_holiday_periods(terms)
     cal_text = generate_school_calendar(terms, holidays)
 
@@ -384,7 +493,8 @@ def update_school_terms() -> bool:
 
 def update_public_holidays():
     print(f"{EMOJI_CALENDAR} Downloading public holidays…")
-    r = requests.get(ICS_URL, timeout=30); r.raise_for_status()
+    r = requests.get(ICS_URL, headers=BROWSER_HEADERS, timeout=30)
+    r.raise_for_status()
     cleaned = []
     for L in r.text.splitlines():
         if L.startswith("SUMMARY"):
