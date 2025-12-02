@@ -25,6 +25,7 @@ EMOJI_SEARCH       = "🔍"
 EMOJI_CRYSTAL_BALL = "🔮"
 EMOJI_SUN          = "🌞"
 EMOJI_PLUS         = "➕"
+EMOJI_PENCIL       = "✏️"
 
 # ─── CONFIG ─────────────────────────────────────────────────────────────────────
 TERMS_YEAR = 2025  # ← bump yearly
@@ -53,6 +54,19 @@ def FALLBACK_YEAR_URLS(year: int):
 # Output filenames
 OUTPUT_FILE         = "SA-Public-Holidays.ics"
 SCHOOL_OUTPUT_FILE  = "SA-School-Terms-Holidays.ics"
+
+# Reliable built-in term dates (used when online sources misbehave)
+STATIC_TERMS = {
+    2025: [
+        {"summary": "Term 1", "start": datetime(2025, 1, 28), "end": datetime(2025, 4, 11)},
+        {"summary": "Term 2", "start": datetime(2025, 4, 28), "end": datetime(2025, 7, 4)},
+        {"summary": "Term 3", "start": datetime(2025, 7, 21), "end": datetime(2025, 9, 26)},
+        {"summary": "Term 4", "start": datetime(2025, 10, 13), "end": datetime(2025, 12, 12)},
+    ],
+    2026: [
+        {"summary": "Term 1", "start": datetime(2026, 1, 27), "end": datetime(2026, 4, 10)},
+    ],
+}
 
 # Source link for notifications
 PUBLIC_HOLIDAYS_SOURCE_URL = "https://www.officeholidays.com/subscribe/australia/south-australia"
@@ -181,12 +195,17 @@ def generate_holiday_periods(terms: List[Dict[str, datetime]]) -> List[Dict[str,
     t_sorted = sorted(terms, key=lambda t: t["start"])
     hols = []
     for a, b in zip(t_sorted, t_sorted[1:]):
-        if b["start"] > a["end"] + timedelta(days=1):
-            num = a["summary"].split()[-1]
+        gap_start = a["end"] + timedelta(days=1)
+        gap_end   = b["start"] - timedelta(days=1)
+        if gap_start <= gap_end:
+            # Preserve the numeric term indicator even if the summary contains parenthesis
+            match = re.search(r"(\d+)", a["summary"])
+            num = match.group(1) if match else a["summary"].strip()
             hols.append({
-                "start": a["end"] + timedelta(days=1),
-                "end":   b["start"] - timedelta(days=1),
-                "summary": f"School Holidays (After Term {num})"
+                "start": gap_start,
+                "end":   gap_end,
+                "summary": f"School Holidays (After Term {num})",
+                "term_number": num,
             })
     return hols
 
@@ -221,7 +240,7 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
             f"CREATED:{ts}",
             "DESCRIPTION:First day of term for South Australian schools.",
             f"URL:{EDU_TERMS_PAGE}",
-            f"DTSTART;VALUE=DATE:{start}","DTEND;VALUE=DATE:{nextd}","DTSTAMP:{ts}",
+            f"DTSTART;VALUE=DATE:{start}", f"DTEND;VALUE=DATE:{nextd}", f"DTSTAMP:{ts}",
             "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
             f"SUMMARY;LANGUAGE=en-us:{summ}",
             "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
@@ -235,7 +254,7 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
                 f"CREATED:{ts}",
                 "DESCRIPTION:Last day of Term 1, 2026 for South Australian schools.",
                 f"URL:{EDU_TERMS_PAGE}",
-                f"DTSTART;VALUE=DATE:{end}","DTEND;VALUE=DATE:{nextde}","DTSTAMP:"+ts.replace("Z","1Z"),
+                f"DTSTART;VALUE=DATE:{end}", f"DTEND;VALUE=DATE:{nextde}", "DTSTAMP:" + ts.replace("Z","1Z"),
                 "LOCATION:South Australia Schools","PRIORITY:5",
                 f"LAST-MODIFIED:{ts.replace('Z','2Z')}","SEQUENCE:2",
                 "SUMMARY;LANGUAGE=en-us:Term 1 End - April 10th, 2026",
@@ -248,7 +267,7 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
                 f"CREATED:{ts}",
                 "DESCRIPTION:Last day of term for South Australian schools.",
                 f"URL:{EDU_TERMS_PAGE}",
-                f"DTSTART;VALUE=DATE:{end}","DTEND;VALUE=DATE:{nextde}","DTSTAMP:{ts}",
+                f"DTSTART;VALUE=DATE:{end}", f"DTEND;VALUE=DATE:{nextde}", f"DTSTAMP:{ts}",
                 "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
                 f"SUMMARY;LANGUAGE=en-us:Term {num} End",
                 "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
@@ -257,14 +276,14 @@ def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Di
     for hol in holidays:
         start = format_dt(hol["start"])
         end   = format_dt(hol["end"] + timedelta(days=1))
-        num   = hol["summary"].split()[-1]
+        num   = hol.get("term_number") or hol["summary"].split()[-1].strip("()")
         cal += [
             "BEGIN:VEVENT","CLASS:PUBLIC",
             f"UID:HOLIDAY-{start}-TERM{num}@sa-school-terms.education.sa.gov.au",
             f"CREATED:{ts}",
             "DESCRIPTION:School holiday period between terms.",
             f"URL:{EDU_TERMS_PAGE}",
-            f"DTSTART;VALUE=DATE:{start}","DTEND;VALUE=DATE:{end}","DTSTAMP:{ts}",
+            f"DTSTART;VALUE=DATE:{start}", f"DTEND;VALUE=DATE:{end}", f"DTSTAMP:{ts}",
             "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
             f"SUMMARY;LANGUAGE=en-us:{hol['summary']}",
             "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
@@ -466,12 +485,17 @@ def update_school_terms() -> bool:
     if not terms:
         terms = parse_terms_from_hwk(TERMS_YEAR) or parse_terms_from_fallbacks(TERMS_YEAR)
         if not terms:
+            print(f"{EMOJI_WARNING} Live sources unavailable; falling back to built-in dates for {TERMS_YEAR}")
+            terms = STATIC_TERMS.get(TERMS_YEAR)
+        if not terms:
             raise Exception(f"All sources blocked or unparsable for SA term dates {TERMS_YEAR}")
 
     # 3) Future Term-1 from HWK, else mirrors
     future_ok = True
     try:
         fut = parse_future_term1_from_hwk(NEXT_YEAR) or parse_future_term1_from_fallbacks(NEXT_YEAR)
+        if not fut:
+            fut = STATIC_TERMS.get(NEXT_YEAR, [None])[0] if STATIC_TERMS.get(NEXT_YEAR) else None
         if fut and not any(t["start"].year == fut["start"].year and t["summary"].endswith("1") for t in terms):
             print(f"{EMOJI_PLUS} Adding future Term-1")
             terms.append(fut)
