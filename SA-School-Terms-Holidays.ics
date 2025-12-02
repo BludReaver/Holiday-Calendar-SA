@@ -11,7 +11,7 @@ X-MS-OLK-FORCEINSPECTOROPEN:TRUE
 BEGIN:VEVENT
 CLASS:PUBLIC
 UID:START-20250128-TERM1@sa-school-terms.education.sa.gov.au
-CREATED:20251202T054700Z
+CREATED:20251202T055923Z
 DESCRIPTION:First day of term for South Australian schools.
 URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools
 DTSTART;VALUE=DATE:20250128
@@ -19,7 +19,7 @@ DTEND;VALUE=DATE:{nextd}
 DTSTAMP:{ts}
 LOCATION:South Australia
 PRIORITY:5
-LAST-MODIFIED:20251202T054700Z
+LAST-MODIFIED:20251202T055923Z
 SEQUENCE:1
 SUMMARY;LANGUAGE=en-us:Term 1 Start
 TRANSP:OPAQUE
@@ -28,7 +28,7 @@ END:VEVENT
 BEGIN:VEVENT
 CLASS:PUBLIC
 UID:END-20250427-TERM1@sa-school-terms.education.sa.gov.au
-CREATED:20251202T054700Z
+CREATED:20251202T055923Z
 DESCRIPTION:Last day of term for South Australian schools.
 URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools
 DTSTART;VALUE=DATE:20250427
@@ -36,7 +36,7 @@ DTEND;VALUE=DATE:{nextde}
 DTSTAMP:{ts}
 LOCATION:South Australia
 PRIORITY:5
-LAST-MODIFIED:20251202T054700Z
+LAST-MODIFIED:20251202T055923Z
 SEQUENCE:1
 SUMMARY;LANGUAGE=en-us:Term 1 End
 TRANSP:OPAQUE
@@ -45,7 +45,7 @@ END:VEVENT
 BEGIN:VEVENT
 CLASS:PUBLIC
 UID:START-20250428-TERM2@sa-school-terms.education.sa.gov.au
-CREATED:20251202T054700Z
+CREATED:20251202T055923Z
 DESCRIPTION:First day of term for South Australian schools.
 URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools
 DTSTART;VALUE=DATE:20250428
@@ -53,7 +53,7 @@ DTEND;VALUE=DATE:{nextd}
 DTSTAMP:{ts}
 LOCATION:South Australia
 PRIORITY:5
-LAST-MODIFIED:20251202T054700Z
+LAST-MODIFIED:20251202T055923Z
 SEQUENCE:1
 SUMMARY;LANGUAGE=en-us:Term 2 Start
 TRANSP:OPAQUE
@@ -62,7 +62,7 @@ END:VEVENT
 BEGIN:VEVENT
 CLASS:PUBLIC
 UID:END-20250720-TERM2@sa-school-terms.education.sa.gov.au
-CREATED:20251202T054700Z
+CREATED:20251202T055923Z
 DESCRIPTION:Last day of term for South Australian schools.
 URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools
 DTSTART;VALUE=DATE:20250720
@@ -70,7 +70,7 @@ DTEND;VALUE=DATE:{nextde}
 DTSTAMP:{ts}
 LOCATION:South Australia
 PRIORITY:5
-LAST-MODIFIED:20251202T054700Z
+LAST-MODIFIED:20251202T055923Z
 SEQUENCE:1
 SUMMARY;LANGUAGE=en-us:Term 2 End
 TRANSP:OPAQUE
@@ -79,7 +79,7 @@ END:VEVENT
 BEGIN:VEVENT
 CLASS:PUBLIC
 UID:START-20250721-TERM3@sa-school-terms.education.sa.gov.au
-CREATED:20251202T054700Z
+CREATED:20251202T055923Z
 DESCRIPTION:First day of term for South Australian schools.
 URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools
 DTSTART;VALUE=DATE:20250721
@@ -87,7 +87,7 @@ DTEND;VALUE=DATE:{nextd}
 DTSTAMP:{ts}
 LOCATION:South Australia
 PRIORITY:5
-LAST-MODIFIED:20251202T054700Z
+LAST-MODIFIED:20251202T055923Z
 SEQUENCE:1
 SUMMARY;LANGUAGE=en-us:Term 3 Start
 TRANSP:OPAQUE
@@ -96,7 +96,7 @@ END:VEVENT
 BEGIN:VEVENT
 CLASS:PUBLIC
 UID:END-20251012-TERM3@sa-school-terms.education.sa.gov.au
-CREATED:20251202T054700Z
+CREATED:20251202T055923Z
 DESCRIPTION:Last day of term for South Australian schools.
 URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools
 DTSTART;VALUE=DATE:20251012
@@ -104,7 +104,7 @@ DTEND;VALUE=DATE:{nextde}
 DTSTAMP:{ts}
 LOCATION:South Australia
 PRIORITY:5
-LAST-MODIFIED:20251202T054700Z
+LAST-MODIFIED:20251202T055923Z
 SEQUENCE:1
 SUMMARY;LANGUAGE=en-us:Term 3 End
 TRANSP:OPAQUE
@@ -113,7 +113,7 @@ END:VEVENT
 BEGIN:VEVENT
 CLASS:PUBLIC
 UID:START-20251013-TERM4@sa-school-terms.education.sa.gov.au
-CREATED:20251202T054700Z
+CREATED:20251202T055923Z
 DESCRIPTION:First day of term for South Australian schools.
 URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools
 DTSTART;VALUE=DATE:20251013
@@ -121,7 +121,7 @@ DTEND;VALUE=DATE:{nextd}
 DTSTAMP:{ts}
 LOCATION:South Australia
 PRIORITY:5
-LAST-MODIFIED:20251202T054700Z
+LAST-MODIFIED:20251202T055923Z
 SEQUENCE:1
 SUMMARY;LANGUAGE=en-us:Term 4 Start
 TRANSP:OPAQUE
@@ -130,7 +130,7 @@ END:VEVENT
 BEGIN:VEVENT
 CLASS:PUBLIC
 UID:END-20260126-TERM4@sa-school-terms.education.sa.gov.au
-CREATED:20251202T054700Z
+CREATED:20251202T055923Z
 DESCRIPTION:Last day of term for South Australian schools.
 URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools
 DTSTART;VALUE=DATE:20260126
@@ -138,7 +138,7 @@ DTEND;VALUE=DATE:{nextde}
 DTSTAMP:{ts}
 LOCATION:South Australia
 PRIORITY:5
-LAST-MODIFIED:20251202T054700Z
+LAST-MODIFIED:20251202T055923Z
 SEQUENCE:1
 SUMMARY;LANGUAGE=en-us:Term 4 End
 TRANSP:OPAQUE
@@ -147,7 +147,7 @@ END:VEVENT
 BEGIN:VEVENT
 CLASS:PUBLIC
 UID:START-20260128-TERM1@sa-school-terms.education.sa.gov.au
-CREATED:20251202T054700Z
+CREATED:20251202T055923Z
 DESCRIPTION:First day of term for South Australian schools.
 URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools
 DTSTART;VALUE=DATE:20260128
@@ -155,7 +155,7 @@ DTEND;VALUE=DATE:{nextd}
 DTSTAMP:{ts}
 LOCATION:South Australia
 PRIORITY:5
-LAST-MODIFIED:20251202T054700Z
+LAST-MODIFIED:20251202T055923Z
 SEQUENCE:1
 SUMMARY;LANGUAGE=en-us:Term 1 Start (January 27, 2026)
 TRANSP:OPAQUE
@@ -163,16 +163,16 @@ X-MICROSOFT-CDO-ALLDAYEVENT:TRUE
 END:VEVENT
 BEGIN:VEVENT
 CLASS:PUBLIC
-UID:TERM1-2026-END-DISTINCT-43395024-1b42-4c7a-91a1-54cd7e14f5fe@sa-school-terms.education.sa.gov.au
-CREATED:20251202T054700Z
+UID:TERM1-2026-END-DISTINCT-29cf13f0-bb87-4cfd-94e1-9e0b787c108e@sa-school-terms.education.sa.gov.au
+CREATED:20251202T055923Z
 DESCRIPTION:Last day of Term 1, 2026 for South Australian schools.
 URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools
 DTSTART;VALUE=DATE:20260411
 DTEND;VALUE=DATE:{nextde}
-DTSTAMP:20251202T0547001Z
+DTSTAMP:20251202T0559231Z
 LOCATION:South Australia Schools
 PRIORITY:5
-LAST-MODIFIED:20251202T0547002Z
+LAST-MODIFIED:20251202T0559232Z
 SEQUENCE:2
 SUMMARY;LANGUAGE=en-us:Term 1 End - April 10th, 2026
 TRANSP:OPAQUE
@@ -181,7 +181,7 @@ END:VEVENT
 BEGIN:VEVENT
 CLASS:PUBLIC
 UID:HOLIDAY-20260127-TERM4)@sa-school-terms.education.sa.gov.au
-CREATED:20251202T054700Z
+CREATED:20251202T055923Z
 DESCRIPTION:School holiday period between terms.
 URL:https://www.education.sa.gov.au/parents-and-families/term-dates-south-australian-state-schools
 DTSTART;VALUE=DATE:20260127
@@ -189,7 +189,7 @@ DTEND;VALUE=DATE:{end}
 DTSTAMP:{ts}
 LOCATION:South Australia
 PRIORITY:5
-LAST-MODIFIED:20251202T054700Z
+LAST-MODIFIED:20251202T055923Z
 SEQUENCE:1
 SUMMARY;LANGUAGE=en-us:School Holidays (After Term 4)
 TRANSP:OPAQUE
