@@ -195,83 +195,137 @@ def format_dt(dt: datetime) -> str:
 
 def generate_school_calendar(terms: List[Dict[str, datetime]], holidays: List[Dict[str, datetime]]) -> str:
     ts = datetime.now().strftime("%Y%m%dT%H%M%SZ")
+
     cal = [
-        "BEGIN:VCALENDAR","VERSION:2.0",
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
         "PRODID:-//South Australia School Terms and Holidays//EN",
         "X-WR-CALNAME:South Australia School Terms and Holidays",
         "X-WR-CALDESC:School terms and holiday periods in South Australia",
-        "REFRESH-INTERVAL;VALUE=DURATION:PT48H","X-PUBLISHED-TTL:PT48H",
-        "CALSCALE:GREGORIAN","METHOD:PUBLISH","X-MS-OLK-FORCEINSPECTOROPEN:TRUE"
+        "REFRESH-INTERVAL;VALUE=DURATION:PT48H",
+        "X-PUBLISHED-TTL:PT48H",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-MS-OLK-FORCEINSPECTOROPEN:TRUE",
     ]
 
+    # ----- TERM EVENTS -----
     for term in sorted(terms, key=lambda t: (t["start"], t["summary"])):
-        num   = term["summary"].split()[-1]
-        start = format_dt(term["start"])
-        end   = format_dt(term["end"])
-        nextd = format_dt(term["start"] + timedelta(days=1))
-        nextde= format_dt(term["end"] + timedelta(days=1))
+        num = term["summary"].split()[-1]  # "1", "2", "3", "4"
 
-        # Term start
-        summ = f"Term {num} Start"
-        if term["start"].year == 2026 and num == "1":
-            summ = "Term 1 Start (January 27, 2026)"
+        start_dt = term["start"]
+        end_dt = term["end"]
+
+        start = format_dt(start_dt)
+        end = format_dt(end_dt)
+        nextd = format_dt(start_dt + timedelta(days=1))
+        nextde = format_dt(end_dt + timedelta(days=1))
+
+        # Term start summary (with your special case)
+        summ_start = f"Term {num} Start"
+        if start_dt.year == 2026 and num == "1":
+            summ_start = "Term 1 Start (January 27, 2026)"
+
+        # TERM START EVENT
         cal += [
-            "BEGIN:VEVENT","CLASS:PUBLIC",
+            "BEGIN:VEVENT",
+            "CLASS:PUBLIC",
             f"UID:START-{start}-TERM{num}@sa-school-terms.education.sa.gov.au",
             f"CREATED:{ts}",
             "DESCRIPTION:First day of term for South Australian schools.",
             f"URL:{EDU_TERMS_PAGE}",
-            f"DTSTART;VALUE=DATE:{start}","DTEND;VALUE=DATE:{nextd}","DTSTAMP:{ts}",
-            "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
-            f"SUMMARY;LANGUAGE=en-us:{summ}",
-            "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
+            f"DTSTART;VALUE=DATE:{start}",
+            f"DTEND;VALUE=DATE:{nextd}",
+            f"DTSTAMP:{ts}",
+            "LOCATION:South Australia",
+            "PRIORITY:5",
+            f"LAST-MODIFIED:{ts}",
+            "SEQUENCE:1",
+            f"SUMMARY;LANGUAGE=en-us:{summ_start}",
+            "TRANSP:OPAQUE",
+            "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
+            "END:VEVENT",
         ]
 
-        # Term end (special case for 2026 kept as requested)
-        if term["end"].year == 2026 and num == "1":
+        # TERM END EVENT
+        if end_dt.year == 2026 and num == "1":
+            # Special 2026 Term 1 end case
             cal += [
-                "BEGIN:VEVENT","CLASS:PUBLIC",
+                "BEGIN:VEVENT",
+                "CLASS:PUBLIC",
                 f"UID:TERM1-2026-END-DISTINCT-{uuid.uuid4()}@sa-school-terms.education.sa.gov.au",
                 f"CREATED:{ts}",
                 "DESCRIPTION:Last day of Term 1, 2026 for South Australian schools.",
                 f"URL:{EDU_TERMS_PAGE}",
-                f"DTSTART;VALUE=DATE:{end}","DTEND;VALUE=DATE:{nextde}","DTSTAMP:"+ts.replace("Z","1Z"),
-                "LOCATION:South Australia Schools","PRIORITY:5",
-                f"LAST-MODIFIED:{ts.replace('Z','2Z')}","SEQUENCE:2",
+                f"DTSTART;VALUE=DATE:{end}",
+                f"DTEND;VALUE=DATE:{nextde}",
+                f"DTSTAMP:{ts[:-1]}1Z",
+                "LOCATION:South Australia Schools",
+                "PRIORITY:5",
+                f"LAST-MODIFIED:{ts[:-1]}2Z",
+                "SEQUENCE:2",
                 "SUMMARY;LANGUAGE=en-us:Term 1 End - April 10th, 2026",
-                "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
+                "TRANSP:OPAQUE",
+                "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
+                "END:VEVENT",
             ]
         else:
             cal += [
-                "BEGIN:VEVENT","CLASS:PUBLIC",
+                "BEGIN:VEVENT",
+                "CLASS:PUBLIC",
                 f"UID:END-{end}-TERM{num}@sa-school-terms.education.sa.gov.au",
                 f"CREATED:{ts}",
                 "DESCRIPTION:Last day of term for South Australian schools.",
                 f"URL:{EDU_TERMS_PAGE}",
-                f"DTSTART;VALUE=DATE:{end}","DTEND;VALUE=DATE:{nextde}","DTSTAMP:{ts}",
-                "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
+                f"DTSTART;VALUE=DATE:{end}",
+                f"DTEND;VALUE=DATE:{nextde}",
+                f"DTSTAMP:{ts}",
+                "LOCATION:South Australia",
+                "PRIORITY:5",
+                f"LAST-MODIFIED:{ts}",
+                "SEQUENCE:1",
                 f"SUMMARY;LANGUAGE=en-us:Term {num} End",
-                "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
+                "TRANSP:OPAQUE",
+                "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
+                "END:VEVENT",
             ]
 
+    # ----- HOLIDAY PERIOD EVENTS -----
     for hol in holidays:
-        start = format_dt(hol["start"])
-        end   = format_dt(hol["end"] + timedelta(days=1))
-        num   = hol["summary"].split()[-1]
+        start_dt = hol["start"]
+        end_dt = hol["end"]
+
+        start = format_dt(start_dt)
+        # all-day DTEND is exclusive
+        end_excl = format_dt(end_dt + timedelta(days=1))
+
+        # Pull the term number out of the summary ("School Holidays (After Term 4)")
+        m = re.search(r"\bTerm\s+(\d+)\b", hol["summary"])
+        term_num = m.group(1) if m else "X"
+
         cal += [
-            "BEGIN:VEVENT","CLASS:PUBLIC",
-            f"UID:HOLIDAY-{start}-TERM{num}@sa-school-terms.education.sa.gov.au",
+            "BEGIN:VEVENT",
+            "CLASS:PUBLIC",
+            f"UID:HOLIDAY-{start}-TERM{term_num}@sa-school-terms.education.sa.gov.au",
             f"CREATED:{ts}",
             "DESCRIPTION:School holiday period between terms.",
             f"URL:{EDU_TERMS_PAGE}",
-            f"DTSTART;VALUE=DATE:{start}","DTEND;VALUE=DATE:{end}","DTSTAMP:{ts}",
-            "LOCATION:South Australia","PRIORITY:5",f"LAST-MODIFIED:{ts}","SEQUENCE:1",
+            f"DTSTART;VALUE=DATE:{start}",
+            f"DTEND;VALUE=DATE:{end_excl}",
+            f"DTSTAMP:{ts}",
+            "LOCATION:South Australia",
+            "PRIORITY:5",
+            f"LAST-MODIFIED:{ts}",
+            "SEQUENCE:1",
             f"SUMMARY;LANGUAGE=en-us:{hol['summary']}",
-            "TRANSP:OPAQUE","X-MICROSOFT-CDO-ALLDAYEVENT:TRUE","END:VEVENT"
+            "TRANSP:OPAQUE",
+            "X-MICROSOFT-CDO-ALLDAYEVENT:TRUE",
+            "END:VEVENT",
         ]
 
     cal.append("END:VCALENDAR")
     return "\n".join(cal)
+
 
 # ─── FETCHING (with tiny retry/backoff) ─────────────────────────────────────────
 def fetch_text(url: str, *, tries: int = 3, sleep: float = 0.6) -> Optional[str]:
